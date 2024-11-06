@@ -1,4 +1,3 @@
-# app/api/v1/endpoints/notes.py
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
