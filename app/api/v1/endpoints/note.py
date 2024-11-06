@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette import status
 
+from app.db.session import DbConnection
 from app.models.note import Note
 from app.schemas.note import NoteOut, NoteCreate, NoteUpdate
 from app.utils.dependency import get_db
@@ -29,7 +30,7 @@ def create_note(note: NoteCreate, db: Session = Depends(get_db)):
         print(f"Error creating note: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the note",
+            detail=f"An error occurred while creating the note: {str(e)}",
         )
 
 
