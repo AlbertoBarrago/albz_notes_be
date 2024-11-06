@@ -5,7 +5,7 @@ Personal Be for notes-app
 [Notes Webapp](https://albertobarrago.github.io/)
 
 ```tree
-my_fastapi_service/
+albz_notes_be/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py
@@ -45,15 +45,8 @@ my_fastapi_service/
 │   ├── __init__.py
 │   ├── test_item.py
 │   └── test_user.py
-├── alembic/
-│   ├── env.py
-│   ├── README
-│   ├── script.py.mako
-│   └── versions/
-│       └── 1234567890_add_user_table.py
 ├── .env
 ├── .gitignore
-├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt
 └── README.md
