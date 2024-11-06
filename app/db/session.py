@@ -33,3 +33,19 @@ class DbConnection:
             finally:
                 cursor.close()
         return None
+
+    def commit(self):
+        if self.connection and self.connection.is_connected():
+            try:
+                self.connection.commit()
+                print("Transaction committed")
+            except Error as e:
+                print(f"Error committing transaction: {e}")
+
+    def rollback(self):
+        if self.connection and self.connection.is_connected():
+            try:
+                self.connection.rollback()
+                print("Transaction rolled back")
+            except Error as e:
+                print(f"Error rolling back transaction: {e}")

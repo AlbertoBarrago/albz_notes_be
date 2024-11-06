@@ -314,4 +314,7 @@ pyrightconfig.json
 pyvenv.cfg
 pip-selfcheck.json
 
+### test
+test.db
+
 # End of https://www.toptal.com/developers/gitignore/api/python,git,jetbrains,venv

@@ -26,8 +26,6 @@ albz_notes_be/
 │   │   ├── __init__.py
 │   ├── schemas/
 │   │   ├── __init__.py
-│   ├── crud/
-│   │   ├── __init__.py
 │   ├── db/
 │   │   ├── __init__.py
 │   │   ├── base.py
