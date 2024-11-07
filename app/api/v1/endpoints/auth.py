@@ -8,7 +8,7 @@ from starlette import status
 from app.core.access_token import create_access_token
 from app.core.config import settings
 from app.db.models.user import User
-from app.schemas.auth import Token
+from app.schemas.auth import TokenRequest, Token
 from app.schemas.user import UserOut, UserCreate
 from app.utils.dependency import get_db
 
@@ -16,9 +16,9 @@ router = APIRouter()
 
 
 @router.post("/token", response_model=Token)
-def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+def login(form_data: TokenRequest, db: Session = Depends(get_db)):
+    print(form_data)
     user = db.query(User).filter(User.username == form_data.username).first()
-
     if not user or not user.verify_password(form_data.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

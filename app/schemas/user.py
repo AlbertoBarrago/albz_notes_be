@@ -6,7 +6,7 @@ class UserBase(BaseModel):
     email: str
 
 class UserCreate(UserBase):
-    password: str  # This will be used during registration
+    password: str
 
 class UserOut(UserBase):
     user_id: int
