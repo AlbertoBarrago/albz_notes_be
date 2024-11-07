@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime
-from sqlalchemy.orm import declarative_base
 
-Base = declarative_base()
+from app.db.models import Base
 
 
 class Note(Base):

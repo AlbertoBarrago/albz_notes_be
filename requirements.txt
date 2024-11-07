@@ -15,3 +15,5 @@ mysql-connector-python~=9.1.0
 python-dotenv~=1.0.1
 SQLAlchemy~=2.0.36
 pytest~=8.3.3
+PyJWT~=2.9.0
+passlib~=1.7.4

@@ -4,8 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette import status
 
-from app.db.session import DbConnection
-from app.models.note import Note
+from app.db.models.note import Note
 from app.schemas.note import NoteOut, NoteCreate, NoteUpdate
 from app.utils.dependency import get_db
 
