@@ -10,8 +10,7 @@ from app.db.models.user import User
 from app.schemas.note import NoteOut, NoteCreate, NoteUpdate
 from app.utils.dependency import get_db, get_current_user
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/token")
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/token')
 
 router = APIRouter()
 
@@ -24,7 +23,7 @@ def create_note(note: NoteCreate, db: Session = Depends(get_db), current_user: U
             content=note.content,
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            user_id = current_user.user_id,
+            user_id=current_user.user_id,
         )
         db.add(db_note)
         db.commit()
@@ -40,7 +39,8 @@ def create_note(note: NoteCreate, db: Session = Depends(get_db), current_user: U
 
 
 @router.put("/{note_id}", response_model=NoteOut)
-def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
+                current_user: User = Depends(get_current_user)):
     db_note = db.query(Note).filter(Note.id == note_id).first()
     if not db_note:
         raise HTTPException(status_code=404, detail="Note not found")

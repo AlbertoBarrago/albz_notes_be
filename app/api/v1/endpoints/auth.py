@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
@@ -13,15 +13,32 @@ from app.utils.dependency import get_db
 
 router = APIRouter()
 
-
+# TODO: verify this strange behaviour, if I pass Form Works swagger if I use Model TokenRequest Return a malformed request.
 @router.post("/token", response_model=Token)
-def login(form_data: TokenRequest, db: Session = Depends(get_db)):
-    print(form_data)
-    user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not user.verify_password(form_data.password):
+def login(
+        grant_type: str = Form(...),
+        username: str = Form(...),
+        password: str = Form(...),
+        db: Session = Depends(get_db)
+):
+    if grant_type != "password":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid grant type"
+        )
+
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not user.verify_password(password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not Authorized",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -29,7 +46,6 @@ def login(form_data: TokenRequest, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
 
     return {"access_token": access_token, "token_type": "bearer"}
-
 
 
 @router.post("/register", response_model=UserOut)
@@ -49,5 +65,3 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return new_user
-
-
