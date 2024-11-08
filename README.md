@@ -9,6 +9,15 @@ Personal Be for notes-app
  - [ ] Improve Error Handling
 
 
+## Note for alembic 
+ - `alembic init alembic`
+ - Import Base and all Models 
+ - `alembic revision --autogenerate -m "Create tables from scratch"
+ - `alembic upgrade head
+`
+`
+
+
 ```tree
 Base Structure
 

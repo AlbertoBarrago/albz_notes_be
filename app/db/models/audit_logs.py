@@ -1,0 +1,15 @@
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from app.db.models import Base
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    action = Column(String(255), nullable=False)
+    description = Column(String(255), nullable=True)
+    timestamp = Column(DateTime, default=datetime.now, nullable=False)
+
+    user = relationship("User", back_populates="audit_logs")

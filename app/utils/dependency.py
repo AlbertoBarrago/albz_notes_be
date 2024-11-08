@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
 from app.core.config import settings
-from app.db.models.user import User
+from app.db.models.users import User
 
 SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{settings.MYSQL_USER}:{settings.MYSQL_PASSWORD}@{settings.MYSQL_HOST}/{settings.MYSQL_DATABASE}"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)

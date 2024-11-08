@@ -6,7 +6,7 @@ from starlette import status
 
 from app.core.access_token import create_access_token
 from app.core.config import settings
-from app.db.models.user import User
+from app.db.models.users import User
 from app.schemas.auth import TokenRequest, Token
 from app.schemas.user import UserOut, UserCreate
 from app.utils.dependency import get_db
