@@ -1,8 +1,16 @@
+"""
+Notes model
+"""
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from app.db.models import Base
+
+from app.db.models.base import Base
+
 
 class Note(Base):
+    """
+    Note Class
+    """
     __tablename__ = 'notes'
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)

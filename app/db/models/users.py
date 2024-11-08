@@ -1,15 +1,21 @@
+"""
+Users Model
+"""
 from passlib.context import CryptContext
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
 
 from sqlalchemy.orm import relationship
 
-from app.db.models import Base
+from app.db.models.base import Base
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class User(Base):
+    """
+    User Class
+    """
     __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -23,7 +29,17 @@ class User(Base):
     audit_logs = relationship("AuditLog", back_populates="user")
 
     def verify_password(self, plain_password: str) -> bool:
+        """
+        Verify password
+        :param plain_password:
+        :return: bool
+        """
         return pwd_context.verify(plain_password, self.hashed_password)
 
     def set_password(self, plain_password: str):
+        """
+        Set password
+        :param plain_password:
+        :return: str
+        """
         self.hashed_password = pwd_context.hash(plain_password)

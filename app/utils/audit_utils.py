@@ -1,3 +1,6 @@
+"""
+Audit utils
+"""
 from app.db.models.audit_logs import AuditLog
 
 

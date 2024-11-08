@@ -1,9 +1,17 @@
+"""
+AuditLog Model
+"""
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.db.models import Base
+
+from app.db.models.base import Base
+
 
 class AuditLog(Base):
+    """
+    AuditLog
+    """
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True)

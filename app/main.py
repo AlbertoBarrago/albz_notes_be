@@ -1,6 +1,9 @@
+"""
+Main: Entry point for execution
+"""
 from fastapi import FastAPI
 
-from app.api.v1.endpoints import note, auth
+from app.api.v1.endpoints import auth, note
 
 app = FastAPI(
     title="Notes BE",

@@ -1,6 +1,10 @@
+"""
+    Auth endpoint
+"""
+from datetime import timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
-from datetime import timedelta
 
 from starlette import status
 
