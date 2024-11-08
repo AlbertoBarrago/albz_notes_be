@@ -5,10 +5,11 @@ Personal Be for notes-app
 [Notes Webapp](https://albertobarrago.github.io/)
 
 ## TODO
- - [ ] Add Logger
- - [ ] Improve Error Handling
- - [x] Audit login 
- - [ ] Check import
+ - [x] Add Logger
+ - [x] Improve Error Handling
+ - [x] Audit action notes and auth 
+ - [x] Check import
+ - [ ] ...
 
 
 ## Note for alembic 
@@ -22,31 +23,41 @@ Personal Be for notes-app
 
 ```tree
 Base Structure
+ -> tree app/ -I '__pycache__'
+app/
+├── __init__.py
+├── api
+│   ├── __init__.py
+│   └── v1
+│       ├── __init__.py
+│       └── endpoints
+│           ├── __init__.py
+│           ├── auth.py
+│           └── note.py
+├── core
+│   ├── __init__.py
+│   ├── access_token.py
+│   └── config.py
+├── db
+│   ├── __init__.py
+│   ├── models
+│   │   ├── __init__.py
+│   │   ├── audit_logs.py
+│   │   ├── base.py
+│   │   ├── notes.py
+│   │   └── users.py
+│   └── session.py
+├── main.py
+├── schemas
+│   ├── __init__.py
+│   ├── auth.py
+│   ├── note.py
+│   └── user.py
+└── utils
+    ├── __init__.py
+    ├── audit_utils.py
+    └── dependency.py
 
-albz_notes_be/
-├── app/
-│   ├── __init__.py
-│   ├── main.py
-│   ├── api/
-│   │   ├── __init__.py
-│   │   ├── v1/
-│   │   │   ├── __init__.py
-│   │   │   └── endpoints/
-│   ├── core/
-│   │   ├── __init__.py
-│   ├── schemas/
-│   │   ├── __init__.py
-│   ├── db/
-│   │   ├── __init__.py
-│   └── utils/
-│       ├── __init__.py
-├── tests/
-│   ├── __init__.py
-├── .env
-├── .gitignore
-├── Dockerfile
-├── requirements.txt
-└── README.md
 ```
 
 
