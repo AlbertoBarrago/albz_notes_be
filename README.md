@@ -16,14 +16,10 @@ Personal Be for notes-app
  - `alembic init alembic`
  - Import Base and all Models 
  - `alembic revision --autogenerate -m "Create tables from scratch"
- - `alembic upgrade head
-`
-`
+ - `alembic upgrade head`
 
 
 ```tree
-Base Structure
- -> tree app/ -I '__pycache__'
 app/
 ├── __init__.py
 ├── api
