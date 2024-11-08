@@ -22,3 +22,10 @@ class NoteOut(NoteBase):
     id: int
 
     model_config = {"env_file": ".env"}
+
+
+class NoteDelete(BaseModel):
+    id_note: int
+    result: str
+
+    model_config = {"env_file": ".env"}

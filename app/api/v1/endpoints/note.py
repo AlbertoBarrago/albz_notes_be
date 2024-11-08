@@ -7,7 +7,7 @@ from starlette import status
 
 from app.db.models.note import Note
 from app.db.models.user import User
-from app.schemas.note import NoteOut, NoteCreate, NoteUpdate
+from app.schemas.note import NoteOut, NoteCreate, NoteUpdate, NoteDelete
 from app.utils.dependency import get_db, get_current_user
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/token')
@@ -52,11 +52,29 @@ def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
         db_note.title = note.title
     if note.content:
         db_note.content = note.content
-    db_note.updated_at = datetime.utcnow()
+    db_note.updated_at = datetime.now()
 
     db.commit()
     db.refresh(db_note)
     return db_note
+
+@router.delete("/{note_id}", response_model=NoteDelete)
+def delete_note(note_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    db_note = db.query(Note).filter(Note.id == note_id).first()
+
+    if not db_note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    if db_note.user_id != current_user.user_id:  # Ensure the user owns the note
+        raise HTTPException(status_code=403, detail="You do not have permission to view this note")
+
+    db.delete(db_note)
+    db.commit()
+    resp = {
+        "result": f"Note {note_id} has been deleted",
+        "id_note": note_id,
+    }
+    return resp
 
 
 @router.get("/{note_id}", response_model=NoteOut)
@@ -75,3 +93,5 @@ def get_note(note_id: int, db: Session = Depends(get_db), current_user: User = D
 def get_notes(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     db_notes = db.query(Note).filter(Note.user_id == current_user.user_id).all()
     return db_notes
+
+
