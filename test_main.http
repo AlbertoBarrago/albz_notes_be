@@ -1,11 +1,13 @@
 # Test your FastAPI endpoints
 
-GET http://127.0.0.1:8000/
+POST http://127.0.0.1:8000/api/v1/notes/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTczMDk4Mzg3M30.x5e44Eo6bXLRQUyFGuGiD5WMVPxsXcIrsb-ZGplG3ag
 Accept: application/json
+Content-Type: application/json
 
-###
-
-GET http://127.0.0.1:8000/hello/User
-Accept: application/json
+{
+  "title": "My New Note",
+  "content": "This is the content of the new note"
+}
 
 ###

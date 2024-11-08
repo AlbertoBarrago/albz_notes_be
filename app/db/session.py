@@ -1,13 +1,22 @@
+"""
+Session module
+"""
 import mysql
 from mysql.connector import Error
 
 
 class DbConnection:
+    """
+    Db Connector Mysql
+    """
     def __init__(self, **config):
         self.config = config
         self.connection = None
 
     def connect(self):
+        """
+        Connect to MySQL
+        """
         try:
             self.connection = mysql.connector.connect(**self.config)
             if self.connection.is_connected():
@@ -17,11 +26,20 @@ class DbConnection:
             self.connection = None
 
     def close(self):
+        """
+        Close MySQL connection
+        """
         if self.connection and self.connection.is_connected():
             self.connection.close()
             print("MySQL connection closed")
 
     def fetch_query(self, query, params=None):
+        """
+        Fetch query from MySQL database
+        :param query:
+        :param params:
+        :return:
+        """
         if self.connection and self.connection.is_connected():
             cursor = self.connection.cursor()
             try:
@@ -35,6 +53,9 @@ class DbConnection:
         return None
 
     def commit(self):
+        """
+        Commit changes to MySQL database
+        """
         if self.connection and self.connection.is_connected():
             try:
                 self.connection.commit()
@@ -43,6 +64,10 @@ class DbConnection:
                 print(f"Error committing transaction: {e}")
 
     def rollback(self):
+        """
+        Rollback changes to MySQL database
+        :return:
+        """
         if self.connection and self.connection.is_connected():
             try:
                 self.connection.rollback()
