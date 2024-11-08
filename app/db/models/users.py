@@ -1,10 +1,10 @@
 """
 Users Model
 """
-from passlib.context import CryptContext
-from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
 
+from passlib.context import CryptContext
+from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 
 from app.db.models.base import Base

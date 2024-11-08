@@ -1,5 +1,5 @@
 """
-    Auth endpoint
+    Auth Endpoint
 """
 from datetime import timedelta
 
@@ -18,13 +18,21 @@ from app.utils.dependency import get_db
 
 router = APIRouter()
 
+
 @router.post("/swagger-login", response_model=Token)
-def login_swagger(
-    grant_type: str = Form(...),
-    username: str = Form(...),
-    password: str = Form(...),
-    db: Session = Depends(get_db)
-):
+def login_swagger(grant_type: str = Form(...),
+                  username: str = Form(...),
+                  password: str = Form(...),
+                  db: Session = Depends(get_db)
+                  ):
+    """
+    Login Swagger
+    :param grant_type:
+    :param username:
+    :param password:
+    :param db:
+    :return: Token
+    """
     if grant_type != "password":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -45,11 +53,18 @@ def login_swagger(
     log_action(db, user_id=user.user_id, action="Login", description="Logged from swagger")
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 @router.post("/login", response_model=Token)
 def login(
         request: TokenRequest,
         db: Session = Depends(get_db)
 ):
+    """
+    Login from Web JSON
+    :param request:
+    :param db:
+    :return: Token
+    """
     if request.grant_type != "password":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -72,7 +87,8 @@ def login(
         )
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+    access_token = (
+        create_access_token(data={"sub": user.username}, expires_delta=access_token_expires))
 
     log_action(db, action="Token", description="Logged from token")
     return {"access_token": access_token, "token_type": "bearer"}
@@ -80,6 +96,12 @@ def login(
 
 @router.post("/register", response_model=UserOut)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    """
+    Register user
+    :param user:
+    :param db:
+    :return: UserOut
+    """
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
         raise HTTPException(
