@@ -11,7 +11,7 @@ from app.db.models.base import Base
 
 class AuditLog(Base):
     """
-    AuditLog
+    AuditLog Class
     """
     __tablename__ = "audit_logs"
 

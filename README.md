@@ -9,15 +9,16 @@ Personal Be for notes-app
  - [x] Improve Error Handling
  - [x] Audit action notes and auth 
  - [x] Check import
- - [ ] ...
+ - [ ] Add home API for Welcome localhost:/ 
 
 
 ## Note for alembic 
  - `alembic init alembic`
- - Import Base and all Models 
- - `alembic revision --autogenerate -m "Create tables from scratch"
+ - Import Base and all Models inside `env.py`
+ - `alembic revision --autogenerate -m "Create tables from scratch"`
  - `alembic upgrade head`
 
+## Tree
 
 ```tree
 app/
