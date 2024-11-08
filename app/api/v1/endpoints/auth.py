@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.db.models.users import User
 from app.schemas.auth import TokenRequest, Token
 from app.schemas.user import UserOut, UserCreate
+from app.utils.audit_utils import log_action
 from app.utils.dependency import get_db
 
 router = APIRouter()
@@ -37,9 +38,10 @@ def login_swagger(
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": username}, expires_delta=access_token_expires)
 
+    log_action(db, user_id=user.user_id, action="Login", description="Logged from swagger")
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.post("/token", response_model=Token)
+@router.post("/login", response_model=Token)
 def login(
         request: TokenRequest,
         db: Session = Depends(get_db)
@@ -68,6 +70,7 @@ def login(
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
 
+    log_action(db, action="Token", description="Logged from token")
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -87,4 +90,5 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
+    log_action(db, user_id=new_user.user_id, action="Register", description="Registered user")
     return new_user

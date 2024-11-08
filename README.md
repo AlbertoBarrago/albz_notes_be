@@ -7,6 +7,8 @@ Personal Be for notes-app
 ## TODO
  - [ ] Add Logger
  - [ ] Improve Error Handling
+ - [x] Audit login 
+ - [ ] Check import
 
 
 ## Note for alembic 

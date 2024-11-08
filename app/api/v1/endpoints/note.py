@@ -29,7 +29,7 @@ def create_note(note: NoteCreate, db: Session = Depends(get_db), current_user: U
         db.add(db_note)
         db.commit()
         db.refresh(db_note)
-        
+
         log_action(db, user_id=current_user.user_id, action="create_note", description="User create note successfully")
         return db_note
     except Exception as e:
@@ -102,5 +102,5 @@ def get_note(note_id: int, db: Session = Depends(get_db), current_user: User = D
 def get_notes(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     db_notes = db.query(Note).filter(Note.user_id == current_user.user_id).all()
 
-    log_action(db, user_id=current_user.user_id, action="get_notes")
+    log_action(db, user_id=current_user.user_id, action="get_notes", description="User get notes successfully")
     return db_notes
