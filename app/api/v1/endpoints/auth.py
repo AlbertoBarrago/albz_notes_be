@@ -27,6 +27,7 @@ def login_swagger(grant_type: str = Form(...),
                   ):
     """
     Login Swagger
+    :param email:
     :param grant_type:
     :param username:
     :param password:

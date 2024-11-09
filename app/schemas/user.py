@@ -9,7 +9,6 @@ class UserBase(BaseModel):
     """
     User Base Model
     """
-    user_id: str
     username: str
     email: str
 
