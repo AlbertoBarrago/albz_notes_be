@@ -7,8 +7,6 @@ class TokenRequest(BaseModel):
     """
     Token Request Model
     """
-    grant_type: str
-    email: str
     username: str
     password: str
 

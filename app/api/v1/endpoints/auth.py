@@ -27,7 +27,6 @@ def login_swagger(grant_type: str = Form(...),
                   ):
     """
     Login Swagger
-    :param email:
     :param grant_type:
     :param username:
     :param password:
@@ -66,11 +65,6 @@ def login(
     :param db:
     :return: Token
     """
-    if request.grant_type != "password":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid grant type"
-        )
 
     user = db.query(User).filter(User.username == request.username).first()
     if not user:
@@ -91,7 +85,7 @@ def login(
     access_token = (
         create_access_token(data={"sub": user.username}, expires_delta=access_token_expires))
 
-    log_action(db, action="Token", description="Logged from token")
+    log_action(db, user_id=user.user_id, action="Token", description="Logged from token")
     return {"access_token": access_token, "token_type": "bearer"}
 
 
