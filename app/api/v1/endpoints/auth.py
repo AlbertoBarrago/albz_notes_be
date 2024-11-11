@@ -1,57 +1,30 @@
 """
     Auth Endpoint
 """
-from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Form
+from fastapi import APIRouter, Depends, Form
 from sqlalchemy.orm import Session
-
-from starlette import status
-
-from app.core.access_token import create_access_token
-from app.core.config import settings
-from app.db.models.users import User
 from app.schemas.auth import TokenRequest, Token
 from app.schemas.user import UserOut, UserCreate
-from app.utils.audit import log_action
-from app.utils.dependency import get_db
+from app.utils.audit.audit import log_action
+from app.utils.auth.actions import perform_action_auth
+from app.utils.db.mysql import get_db
 
 router = APIRouter()
 
 
-@router.post("/swagger-login", response_model=Token)
-def login_swagger(grant_type: str = Form(...),
-                  username: str = Form(...),
-                  password: str = Form(...),
-                  db: Session = Depends(get_db)
-                  ):
+@router.post("/register", response_model=UserOut)
+def register_user(user: UserCreate, db: Session = Depends(get_db)):
     """
-    Login Swagger
-    :param grant_type:
-    :param username:
-    :param password:
+    Register user
+    :param user:
     :param db:
-    :return: Token
+    :return: UserOut
     """
-    if grant_type != "password":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid grant type"
-        )
+    new_user = perform_action_auth(db, "register", user=user)
 
-    user = db.query(User).filter(User.username == username).first()
-    if not user or not user.verify_password(password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": username}, expires_delta=access_token_expires)
-
-    log_action(db, user_id=user.user_id, action="Login", description="Logged from swagger")
-    return {"access_token": access_token, "token_type": "bearer"}
+    log_action(db, user_id=new_user.user_id, action="Register", description="Registered user")
+    return new_user
 
 
 @router.post("/login", response_model=Token)
@@ -66,50 +39,39 @@ def login(
     :return: Token
     """
 
-    user = db.query(User).filter(User.username == request.username).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    user_logged = perform_action_auth(db,
+                                      "login",
+                                      request)
 
-    if not user.verify_password(request.password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not Authorized",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    log_action(db,
+               user_id=user_logged['user'].user_id,
+               action="Token",
+               description="Logged from token")
 
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = (
-        create_access_token(data={"sub": user.username}, expires_delta=access_token_expires))
-
-    log_action(db, user_id=user.user_id, action="Token", description="Logged from token")
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": user_logged['access_token'], "token_type": "bearer"}
 
 
-@router.post("/register", response_model=UserOut)
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
+@router.post("/swagger-login", response_model=Token)
+def swagger_login(grant_type: str = Form(...),
+                  username: str = Form(...),
+                  password: str = Form(...),
+                  db: Session = Depends(get_db)
+                  ):
     """
-    Register user
-    :param user:
+    Login Swagger
+    :param grant_type:
+    :param username:
+    :param password:
     :param db:
-    :return: UserOut
+    :return: Token
     """
-    db_user = db.query(User).filter(User.username == user.username).first()
-    if db_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
-        )
+    user_logged = perform_action_auth(db, "swagger_login",
+                                      grant_type=grant_type,
+                                      username=username,
+                                      password=password)
 
-    new_user = User(username=user.username, email=user.email)
-    new_user.set_password(user.password)
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    log_action(db, user_id=new_user.user_id, action="Register", description="Registered user")
-    return new_user
+    log_action(db,
+               user_id=user_logged['user'].user_id,
+               action="Login",
+               description="Logged from swagger")
+    return {"access_token": user_logged['access_token'], "token_type": "bearer"}

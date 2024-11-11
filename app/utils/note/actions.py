@@ -2,16 +2,17 @@
 Note Action DB
 """
 from datetime import datetime
+
 from fastapi import HTTPException
 from app.db.models.notes import Note
 
 
-def perform_action(db, action, data=None, note_id=None, current_user=None):
+def perform_action(db, action, note=None, note_id=None, current_user=None):
     """
     Perform an action on the database
     :param db:
     :param action:
-    :param data:
+    :param note:
     :param note_id:
     :param current_user:
     :return: Note
@@ -20,14 +21,14 @@ def perform_action(db, action, data=None, note_id=None, current_user=None):
     match action:
         case "add_note":
             object_data = Note(
-                title=data.title,
-                content=data.content,
-                created_at=data.now(),
-                updated_at=data.now(),
-                user_id=data.user_id,
+                title=note.title,
+                content=note.content,
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
+                user_id=current_user.user_id,
             )
         case "update_note":
-            object_data = db.query(Note).filter(data.id == note_id).first()
+            object_data = db.query(Note).filter(note.id == note_id).first()
             if not object_data:
                 raise HTTPException(status_code=404, detail="Note not found")
 
@@ -36,10 +37,10 @@ def perform_action(db, action, data=None, note_id=None, current_user=None):
                     status_code=403,
                     detail="You do not have permission to update this note")
 
-            if data.title:
-                object_data.title = data.title
-            if data.content:
-                object_data.content = data.content
+            if note.title:
+                object_data.title = note.title
+            if note.content:
+                object_data.content = note.content
             object_data.updated_at = datetime.now()
         case "get_note_by_id":
             object_data = db.query(Note).filter(Note.id == note_id).first()
@@ -76,4 +77,4 @@ def perform_action(db, action, data=None, note_id=None, current_user=None):
     db.add(object_data)
     db.commit()
     db.refresh(object_data)
-    return data
+    return object_data
