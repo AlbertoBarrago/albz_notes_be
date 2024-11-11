@@ -10,7 +10,7 @@ from app.db.models.users import User
 from app.schemas.note import NoteOut, NoteCreate, NoteUpdate, NoteDelete
 from app.utils.note.actions import perform_action
 from app.utils.audit.actions import log_action
-from app.utils.db.mysql import get_db, get_current_user
+from app.db.mysql import get_db, get_current_user
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/token')
 
