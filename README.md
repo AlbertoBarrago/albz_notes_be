@@ -2,9 +2,9 @@
 
 Personal Be for notes-app
 
-<img src="architectural-blueprint.jpg" alt="Architectural Blueprint Architect">
-
 [Notes Webapp](https://albertobarrago.github.io/)
+
+![img.png](img.png)
 
 ## Feature Description
 - Python v3.12
