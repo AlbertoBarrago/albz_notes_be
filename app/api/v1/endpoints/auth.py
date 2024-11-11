@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.db.models.users import User
 from app.schemas.auth import TokenRequest, Token
 from app.schemas.user import UserOut, UserCreate
-from app.utils.audit_utils import log_action
+from app.utils.audit import log_action
 from app.utils.dependency import get_db
 
 router = APIRouter()
