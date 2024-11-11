@@ -314,6 +314,9 @@ pyrightconfig.json
 pyvenv.cfg
 pip-selfcheck.json
 
+### Alembic
+alembic/versions/**/*
+
 ### TEST
 test.db
 

@@ -41,7 +41,7 @@ def perform_action_auth(db,
             db.add(new_user)
             db.commit()
             db.refresh(new_user)
-            return new_user
+            return {"new_user": new_user}
         case "login":
             user_fetched = db.query(User).filter(User.username == request.username).first()
             if not user_fetched:

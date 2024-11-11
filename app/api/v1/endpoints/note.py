@@ -104,8 +104,8 @@ def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
     action_result = perform_action(db,
                                    'update_note',
                                    note,
-                                   note_id,
-                                   current_user,
+                                   note_id=note_id,
+                                   current_user=current_user,
                                    )
 
     log_action(db,

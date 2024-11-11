@@ -28,7 +28,7 @@ def perform_action(db, action, note=None, note_id=None, current_user=None):
                 user_id=current_user.user_id,
             )
         case "update_note":
-            object_data = db.query(Note).filter(note.id == note_id).first()
+            object_data = db.query(Note).filter(Note.id == note_id).first()
             if not object_data:
                 raise HTTPException(status_code=404, detail="Note not found")
 

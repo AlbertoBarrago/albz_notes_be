@@ -21,10 +21,10 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     :param db:
     :return: UserOut
     """
-    new_user = perform_action_auth(db, "register", user=user)
+    user = perform_action_auth(db, "register_user", user=user)
 
-    log_action(db, user_id=new_user.user_id, action="Register", description="Registered user")
-    return new_user
+    log_action(db, user_id=user['new_user'].user_id, action="Register", description="Registered user")
+    return user['new_user']
 
 
 @router.post("/login", response_model=Token)
