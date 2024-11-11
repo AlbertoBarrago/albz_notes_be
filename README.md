@@ -4,12 +4,18 @@ Personal Be for notes-app
 
 [Notes Webapp](https://albertobarrago.github.io/)
 
+## Feature Description
+- Python v3.12
+- FastApi BE with JWT authentication
+- Mysql, SQLAlchemy and Alembic
+- 
+
 ## TODO
  - [x] Add Logger
  - [x] Improve Error Handling
  - [x] Audit action notes and auth 
  - [x] Check import
- - [ ] Add home API for Welcome localhost:/ 
+ - [x] Add home API for Welcome localhost:/ 
 
 
 ## Note for alembic 

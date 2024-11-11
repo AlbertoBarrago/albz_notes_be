@@ -38,7 +38,6 @@ class DbConnection:
         Fetch query from MySQL database
         :param query:
         :param params:
-        :return:
         """
         if self.connection and self.connection.is_connected():
             cursor = self.connection.cursor()
@@ -66,7 +65,6 @@ class DbConnection:
     def rollback(self):
         """
         Rollback changes to MySQL database
-        :return:
         """
         if self.connection and self.connection.is_connected():
             try:

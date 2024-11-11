@@ -1,7 +1,7 @@
 """
 Audit utils
 """
-from app.db.models.audit_logs import AuditLog
+from app.db.models.audit import AuditLog
 
 
 def log_action(session,

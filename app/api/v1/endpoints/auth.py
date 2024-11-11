@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Form
 from sqlalchemy.orm import Session
 from app.schemas.auth import TokenRequest, Token
 from app.schemas.user import UserOut, UserCreate
-from app.utils.audit.audit import log_action
+from app.utils.audit.actions import log_action
 from app.utils.auth.actions import perform_action_auth
 from app.utils.db.mysql import get_db
 
