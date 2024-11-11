@@ -4,6 +4,8 @@ Users Model
 from datetime import datetime
 
 from passlib.context import CryptContext
+import bcrypt
+
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 
@@ -34,7 +36,7 @@ class User(Base):
         :param plain_password:
         :return: bool
         """
-        return pwd_context.verify(plain_password, self.hashed_password)
+        return bcrypt.checkpw(plain_password.encode(), self.hashed_password.encode())
 
     def set_password(self, plain_password: str):
         """
@@ -42,4 +44,6 @@ class User(Base):
         :param plain_password:
         :return: str
         """
-        self.hashed_password = pwd_context.hash(plain_password)
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(plain_password.encode(), salt)
+        self.hashed_password = hashed_password.decode()
