@@ -2,7 +2,7 @@ from datetime import datetime
 from sqlalchemy.orm import sessionmaker
 from app.db.models import Base
 from sqlalchemy import create_engine
-
+from app.db.models.users import User
 from app.db.models.notes import Note
 
 # Using an in-memory SQLite database for testing
@@ -18,11 +18,24 @@ class TestNote:
 
         self.session = SessionLocal()
 
+        # Create a test user
+        self.test_user = User(
+            username="test_user",
+            email="test_user@example.com",
+            hashed_password="hashed_password",  # Assuming you set a valid password
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+        self.session.add(self.test_user)
+        self.session.commit()
+
+        # Create a valid note and associate with the test user
         self.valid_note = Note(
             title="Test Note",
             content="This is a test note.",
             created_at=datetime.now(),
-            updated_at=datetime.now()
+            updated_at=datetime.now(),
+            user_id=self.test_user.user_id  # Associate note with the test user
         )
 
         self.session.add(self.valid_note)

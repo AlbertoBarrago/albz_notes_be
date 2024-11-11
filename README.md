@@ -8,7 +8,12 @@ Personal Be for notes-app
 - Python v3.12
 - FastApi BE with JWT authentication
 - Mysql, SQLAlchemy and Alembic
-- 
+- Swagger (automagically) on `/docs`
+
+## Test 
+```shell
+pytest -p no:warnings test/**/*.py
+```
 
 ## TODO
  - [x] Add Logger
@@ -36,6 +41,7 @@ app/
 │       └── endpoints
 │           ├── __init__.py
 │           ├── auth.py
+│           ├── home.py
 │           └── note.py
 ├── core
 │   ├── __init__.py
@@ -43,13 +49,12 @@ app/
 │   └── config.py
 ├── db
 │   ├── __init__.py
-│   ├── models
-│   │   ├── __init__.py
-│   │   ├── audit_logs.py
-│   │   ├── base.py
-│   │   ├── notes.py
-│   │   └── users.py
-│   └── session.py
+│   └── models
+│       ├── __init__.py
+│       ├── audit.py
+│       ├── base.py
+│       ├── notes.py
+│       └── users.py
 ├── main.py
 ├── schemas
 │   ├── __init__.py
@@ -58,11 +63,22 @@ app/
 │   └── user.py
 └── utils
     ├── __init__.py
-    ├── audit_utils.py
-    └── dependency.py
+    ├── audit
+    │   ├── __init__.py
+    │   └── actions.py
+    ├── auth
+    │   ├── __init__.py
+    │   └── actions.py
+    ├── db
+    │   ├── __init__.py
+    │   ├── actions.py
+    │   └── mysql.py
+    └── note
+        ├── __init__.py
+        └── actions.py
 
 ```
 
 
 
-work in progress... 
+Please if you don't find some requirements, or have some problem during installing steps; Send me a PM. I really appreciate ♥️  
