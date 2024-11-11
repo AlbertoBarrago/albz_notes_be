@@ -23,7 +23,11 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     """
     user = perform_action_auth(db, "register_user", user=user)
 
-    log_action(db, user_id=user['new_user'].user_id, action="Register", description="Registered user")
+    log_action(db,
+               user_id=user['new_user'].user_id,
+               action="Register",
+               description="Registered user")
+
     return user['new_user']
 
 
