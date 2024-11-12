@@ -3,6 +3,9 @@ Auth Schema
 """
 from pydantic import BaseModel
 
+from app.schemas.user import UserBase
+
+
 class TokenRequest(BaseModel):
     """
     Token Request Model
@@ -10,9 +13,10 @@ class TokenRequest(BaseModel):
     username: str
     password: str
 
-class Token(BaseModel):
+class TokenResponse(BaseModel):
     """
     Token Response Model
     """
     access_token: str
     token_type: str
+    user: UserBase
