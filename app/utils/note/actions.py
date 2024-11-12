@@ -2,79 +2,96 @@
 Note Action DB
 """
 from datetime import datetime
-
 from fastapi import HTTPException
 from app.db.models.notes import Note
 
 
-def perform_action(db, action, note=None, note_id=None, current_user=None):
+def note_to_dict(note):
+    """Convert Note object to dictionary"""
+    return {
+        "id": note.id,
+        "title": note.title,
+        "content": note.content,
+        "created_at": note.created_at.isoformat(),
+        "updated_at": note.updated_at.isoformat(),
+        "user_id": note.user_id
+    }
+
+
+def perform_note_action(db, action: str, note=None, note_id=None, current_user=None):
     """
-    Perform an action on the database
-    :param db:
-    :param action:
-    :param note:
-    :param note_id:
-    :param current_user:
-    :return: Note
+    Perform database actions for notes
+    :param db: Database connection
+    :param action: Action to perform
+    :param note: Note object
+    :param note_id: ID of note
+    :param current_user: Current authenticated user
+    :return: Note or response object
     """
-    object_data = None
     match action:
         case "add_note":
-            object_data = Note(
+            new_note = Note(
                 title=note.title,
                 content=note.content,
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
-                user_id=current_user.user_id,
+                user_id=current_user.user_id
             )
-        case "update_note":
-            object_data = db.query(Note).filter(Note.id == note_id).first()
-            if not object_data:
-                raise HTTPException(status_code=404, detail="Note not found")
+            db.add(new_note)
+            db.commit()
+            db.refresh(new_note)
+            return {"notes": note_to_dict(new_note)}
 
-            if object_data.user_id != current_user.user_id:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You do not have permission to update this note")
+        case "update_note":
+            note_obj = db.query(Note).filter(Note.id == note_id).first()
+            if not note_obj:
+                raise HTTPException(status_code=404,
+                                    detail="Note not found")
+
+            if note_obj.user_id != current_user.user_id:
+                raise HTTPException(status_code=403,
+                                    detail="You do not have permission to update this note")
 
             if note.title:
-                object_data.title = note.title
+                note_obj.title = note.title
             if note.content:
-                object_data.content = note.content
-            object_data.updated_at = datetime.now()
-        case "get_note_by_id":
-            object_data = db.query(Note).filter(Note.id == note_id).first()
-            if not object_data:
-                raise HTTPException(status_code=404, detail="Note not found")
+                note_obj.content = note.content
+            note_obj.updated_at = datetime.now()
 
-            if object_data.user_id != current_user.user_id:
-                raise HTTPException(status_code=403,
-                                    detail="You do not have permission to view this note")
-
-            return object_data
-        case "get_notes":
-            object_data = db.query(Note).filter(Note.user_id == current_user.user_id).all()
-
-            return object_data
-        case "delete_note":
-            object_data = db.query(Note).filter(Note.id == note_id).first()
-
-            if not object_data:
-                raise HTTPException(status_code=404, detail="Note not found")
-
-            if object_data.user_id != current_user.user_id:
-                raise HTTPException(status_code=403,
-                                    detail="You do not have permission to view this note")
-
-            db.delete(object_data)
             db.commit()
-            resp = {
-                "result": f"Note {note_id} has been deleted",
-                "id_note": note_id,
-            }
-            return resp
+            db.refresh(note_obj)
+            return note_to_dict(note_obj)
 
-    db.add(object_data)
-    db.commit()
-    db.refresh(object_data)
-    return object_data
+        case "get_note_by_id":
+            note_obj = db.query(Note).filter(Note.id == note_id).first()
+            if not note_obj:
+                raise HTTPException(status_code=404,
+                                    detail="Note not found")
+
+            if note_obj.user_id != current_user.user_id:
+                raise HTTPException(status_code=403,
+                                    detail="You do not have permission to view this note")
+
+            return note_to_dict(note_obj)
+
+        case "get_notes":
+            notes = db.query(Note).filter(Note.user_id == current_user.user_id).all()
+            return {"notes": [note_to_dict(note) for note in notes]}
+
+        case "delete_note":
+            note_obj = db.query(Note).filter(Note.id == note_id).first()
+            if not note_obj:
+                raise HTTPException(status_code=404,
+                                    detail="Note not found")
+
+            if note_obj.user_id != current_user.user_id:
+                raise HTTPException(status_code=403,
+                                    detail="You do not have permission to delete this note")
+
+            db.delete(note_obj)
+            db.commit()
+
+            return {
+                "result": f"Note {note_id} has been deleted",
+                "id_note": note_id
+            }

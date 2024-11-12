@@ -30,7 +30,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
     return {"access_token": new_user['access_token'],
             "token_type": "bearer",
-            "user": new_user['user']}
+            "user": new_user['new_user']}
 
 
 @router.post("/login", response_model=TokenResponse)

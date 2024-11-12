@@ -1,6 +1,7 @@
 """
 Note Endpoint
 """
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -8,9 +9,9 @@ from starlette import status
 
 from app.db.models.users import User
 from app.schemas.note import NoteOut, NoteCreate, NoteUpdate, NoteDelete
-from app.utils.note.actions import perform_action
 from app.utils.audit.actions import log_action
 from app.db.mysql import get_db, get_current_user
+from app.utils.note.actions import perform_note_action
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/token')
 
@@ -29,14 +30,17 @@ def get_note(note_id: int,
     :return: NoteOut
     """
 
-    action_result = perform_action(db, 'get_note_by_id', note_id=note_id, current_user=current_user)
+    notes_out = perform_note_action(db, 'get_note_by_id',
+                                    note_id=note_id,
+                                    current_user=current_user)
+
 
     log_action(db,
                user_id=current_user.user_id,
                action="get_note_by_id",
                description="User get note successfully")
 
-    return action_result
+    return notes_out
 
 
 @router.get("/", response_model=list[NoteOut])
@@ -48,13 +52,13 @@ def get_notes(db: Session = Depends(get_db),
     :param current_user:
     :return: NoteOut
     """
-    action_result = perform_action(db, 'get_notes', current_user=current_user)
+    notes_out = perform_note_action(db, 'get_notes', current_user=current_user)
 
     log_action(db,
                user_id=current_user.user_id,
                action="get_notes", description="User get notes successfully")
 
-    return action_result
+    return notes_out
 
 
 @router.post("/", response_model=NoteOut)
@@ -69,7 +73,7 @@ def add_note(note: NoteCreate,
     :return: NoteOut
     """
     try:
-        action_result = perform_action(db,
+        notes_out = perform_note_action(db,
                                        'add_note',
                                        note,
                                        current_user=current_user)
@@ -79,7 +83,7 @@ def add_note(note: NoteCreate,
                    action="create_note",
                    description="User create note successfully")
 
-        return action_result
+        return notes_out
     except Exception as e:
         db.rollback()
         print(f"Error creating note: {e}")
@@ -101,19 +105,20 @@ def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
     :return: NoteOut
     """
 
-    action_result = perform_action(db,
+    notes_out = perform_note_action(db,
                                    'update_note',
                                    note,
                                    note_id=note_id,
                                    current_user=current_user,
                                    )
 
+
     log_action(db,
                user_id=current_user.user_id,
                action="update_note",
                description="User update note successfully")
 
-    return action_result
+    return notes_out
 
 
 @router.delete("/{note_id}", response_model=NoteDelete)
@@ -128,14 +133,15 @@ def delete_note(note_id: int,
     :return: NoteDelete
     """
 
-    action_result = perform_action(db,
+    notes_out = perform_note_action(db,
                                    "delete_note",
                                    note_id=note_id,
                                    current_user=current_user)
+
 
     log_action(db,
                user_id=current_user.user_id,
                action="delete_note",
                description="User delete note successfully")
 
-    return action_result
+    return notes_out
