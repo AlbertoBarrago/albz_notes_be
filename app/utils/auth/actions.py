@@ -41,7 +41,15 @@ def perform_action_auth(db,
             db.add(new_user)
             db.commit()
             db.refresh(new_user)
-            return {"new_user": new_user}
+            user_fetched = db.query(User).filter(User.username == new_user.username).first()
+            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = (
+                create_access_token(data={"sub": user_fetched.username},
+                                    expires_delta=access_token_expires))
+            return {"access_token": access_token,
+                    "new_user": user_fetched}
+
+
         case "login":
             user_fetched = db.query(User).filter(User.username == request.username).first()
             if not user_fetched:
