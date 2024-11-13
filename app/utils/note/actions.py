@@ -40,7 +40,7 @@ def perform_note_action(db, action: str, note=None, note_id=None, current_user=N
             db.add(new_note)
             db.commit()
             db.refresh(new_note)
-            return {"notes": note_to_dict(new_note)}
+            return note_to_dict(new_note)
 
         case "update_note":
             note_obj = db.query(Note).filter(Note.id == note_id).first()
