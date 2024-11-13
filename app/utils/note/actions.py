@@ -76,7 +76,7 @@ def perform_note_action(db, action: str, note=None, note_id=None, current_user=N
 
         case "get_notes":
             notes = db.query(Note).filter(Note.user_id == current_user.user_id).all()
-            return {"notes": [note_to_dict(note) for note in notes]}
+            return [note_to_dict(note) for note in notes]
 
         case "delete_note":
             note_obj = db.query(Note).filter(Note.id == note_id).first()
