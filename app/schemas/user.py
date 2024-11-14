@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     """
     User Base Model
     """
+    role: str = "GUEST"
     username: str
     email: str
 
