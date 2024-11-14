@@ -26,7 +26,6 @@ def perform_action_auth(db,
     """
     match action:
         case "login":
-            # Handling email and username for login
             user_fetched = (db.query(User)
                     .filter((User.username == request.username) |
                             (User.email == request.username))

@@ -4,10 +4,12 @@ User actions
 from datetime import datetime
 
 from fastapi import HTTPException
+from sqlalchemy import or_
 from starlette import status
 
 from app.core.access_token import generate_user_token
 from app.db.models.users import User
+
 
 def user_to_dict(user):
     """Convert User object to dictionary"""
@@ -24,7 +26,7 @@ def perform_action_user(db,
                         action: str,
                         user=None,
                         current_user=None,
-                        **kargs):
+                        **kwargs):
     """
     Perform database actions for users
     :param db: Database connection
@@ -35,8 +37,8 @@ def perform_action_user(db,
     """
     match action:
         case "register_user":
-            query = db.query(User).filter(User.username == user.username).first()
-            if query:
+            user_fetched = db.query(User).filter(User.username == user.username).first()
+            if user_fetched:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Username already registered"
@@ -49,7 +51,7 @@ def perform_action_user(db,
             db.commit()
             db.refresh(new_user)
             user_fetched = db.query(User).filter(User.username == new_user.username).first()
-            return  generate_user_token(user_fetched)
+            return generate_user_token(user_fetched)
 
         case "get_user":
             user_obj = db.query(User).filter(User.user_id == current_user.user_id).first()
@@ -92,17 +94,19 @@ def perform_action_user(db,
             return {"message": "User deleted successfully"}
 
         case "reset_password":
-            user_obj = db.query(User).filter(User.user_id == current_user.user_id).first()
-            if not user_obj:
+            user_fetched = (db.query(User)
+                .filter(or_(
+                    User.username == kwargs.get('user_username'),
+                    User.email == kwargs.get('user_username')
+                ))
+                .first())
+            if not user_fetched:
                 raise HTTPException(status_code=404, detail="User not found")
 
-            if not user_obj.verify_password(kargs.get('current_password')):
+            if not user_fetched.verify_password(kwargs.get('current_password')):
                 raise HTTPException(status_code=400, detail="Incorrect current password")
 
-            if user_obj.user_id != current_user.user_id:
-                raise HTTPException(status_code=403, detail="Not authorized to reset password")
-
-            user_obj.set_password(kargs.get('new_password'))
-            user_obj.updated_at = datetime.now()
+            user_fetched.set_password(kwargs.get('new_password'))
+            user_fetched.updated_at = datetime.now()
             db.commit()
-            return {"message": "Password reset successfully"}
+            return {"message": "Password reset successfully", "user": user_to_dict(user_fetched)}

@@ -34,6 +34,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
             "token_type": "bearer",
             "user": new_user['new_user']}
 
+
 @router.post("/reset-password")
 def reset_password(password_reset: PasswordReset,
                    db: Session = Depends(get_db)):
@@ -44,15 +45,14 @@ def reset_password(password_reset: PasswordReset,
     :return: Success message
     """
 
-    user = None
-    perform_action_user(db, "reset_password",
-                        user=user,
-                        new_password=password_reset.new_password,
-                        current_password=password_reset.current_password
-                        )
+    updated_user = perform_action_user(db, "reset_password",
+                                       user_username=password_reset.username,
+                                       new_password=password_reset.new_password,
+                                       current_password=password_reset.current_password
+                                       )
 
     log_action(db,
-               user_id=user.user_id,
+               user_id=updated_user['user']['user_id'],
                action="Reset Password",
                description="Password reset successfully")
 
