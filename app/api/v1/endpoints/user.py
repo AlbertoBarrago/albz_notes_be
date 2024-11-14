@@ -48,6 +48,7 @@ def get_current_user_info(current_user: User = Depends(get_current_user),
     """
     Get current user information
     :param current_user:
+    :param db:
     :return: UserOut
     """
     return perform_action_user(db,

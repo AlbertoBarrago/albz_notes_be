@@ -4,7 +4,7 @@ Personal Be for notes-app
 
 [Notes Webapp](https://albertobarrago.github.io/)
 
-![img.png](img.png)
+![img.png](swagger_img.png)
 
 ## Feature Description
 - Python v3.12
