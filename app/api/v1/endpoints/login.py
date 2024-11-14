@@ -5,7 +5,6 @@
 from fastapi import APIRouter, Depends, Form
 from sqlalchemy.orm import Session
 from app.schemas.login import TokenRequest, TokenResponse
-from app.utils.audit.actions import log_action
 from app.utils.login.actions import perform_action_auth
 from app.db.mysql import get_db
 
@@ -28,10 +27,6 @@ def login(
                                       "login",
                                       request)
 
-    log_action(db,
-               user_id=user_logged['user'].user_id,
-               action="Token",
-               description="Logged from token")
 
     return {"access_token": user_logged['access_token'],
             "token_type": "bearer",
@@ -57,10 +52,6 @@ def swagger_login(grant_type: str = Form(...),
                                       username=username,
                                       password=password)
 
-    log_action(db,
-               user_id=user_logged['user'].user_id,
-               action="Login",
-               description="Logged from swagger")
 
     return {"access_token": user_logged['access_token'],
             "token_type": "bearer",

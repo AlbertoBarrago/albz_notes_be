@@ -9,6 +9,7 @@ from starlette import status
 from app.core.access_token import create_access_token, generate_user_token
 from app.core.config import settings
 from app.db.models.users import User
+from app.utils.audit.actions import log_action
 
 
 def perform_action_auth(db,
@@ -45,6 +46,11 @@ def perform_action_auth(db,
                     headers={"WWW-Authenticate": "Bearer"},
                 )
 
+            log_action(db,
+                       user_id=user_fetched.user_id,
+                       action="Token",
+                       description="Logged from token")
+
             return  generate_user_token(user_fetched)
 
         case "swagger_login":
@@ -65,6 +71,11 @@ def perform_action_auth(db,
                     detail="Incorrect username or password",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
+
+            log_action(db,
+                       user_id=user_fetched.user_id,
+                       action="Login",
+                       description="Logged from swagger")
 
             access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
             access_token = create_access_token(data={"sub": user_fetched.username},
