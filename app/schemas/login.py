@@ -1,5 +1,5 @@
 """
-Auth Schema
+Login Schema
 """
 from pydantic import BaseModel
 

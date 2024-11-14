@@ -15,8 +15,6 @@ class NoteBase(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    model_config = {"env_file": ".env"}
-
 
 class NoteCreate(NoteBase):
     """
@@ -35,8 +33,6 @@ class NoteOut(NoteBase):
     NoteOut Model
     """
     id: int
-
-    model_config = {"env_file": ".env"}
 
 
 class NoteDelete(BaseModel):

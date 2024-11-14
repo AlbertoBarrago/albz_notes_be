@@ -18,6 +18,19 @@ class UserCreate(UserBase):
     """
     password: str
 
+class UserUpdate(UserBase):
+    """
+    User Update Model
+    """
+    password: str
+
+class PasswordReset(BaseModel):
+    """
+    Password Reset Model
+    """
+    current_password: str
+    new_password: str
+
 class UserOut(UserBase):
     """
     User Out Model

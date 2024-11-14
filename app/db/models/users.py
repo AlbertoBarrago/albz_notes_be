@@ -48,3 +48,4 @@ class User(Base):
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(plain_password.encode(), salt)
         self.hashed_password = hashed_password.decode()
+        return self.hashed_password

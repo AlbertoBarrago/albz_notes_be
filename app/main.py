@@ -3,7 +3,7 @@ Main: Entry point for execution
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1.endpoints import auth, note, home
+from app.api.v1.endpoints import login, note, user, home
 
 app = FastAPI(
     title="Notes BE",
@@ -28,5 +28,6 @@ app.add_middleware(
 
 
 app.include_router(home.router, tags=["home"])
-app.include_router(auth.router, prefix="/api/v1", tags=["Auth"])
+app.include_router(login.router, prefix="/api/v1", tags=["Login"])
+app.include_router(user.router, prefix="/api/v1/user", tags=["User"])
 app.include_router(note.router, prefix="/api/v1/notes", tags=["Notes"])

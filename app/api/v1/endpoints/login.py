@@ -4,33 +4,12 @@
 
 from fastapi import APIRouter, Depends, Form
 from sqlalchemy.orm import Session
-from app.schemas.auth import TokenRequest, TokenResponse
-from app.schemas.user import UserCreate
+from app.schemas.login import TokenRequest, TokenResponse
 from app.utils.audit.actions import log_action
-from app.utils.auth.actions import perform_action_auth
+from app.utils.login.actions import perform_action_auth
 from app.db.mysql import get_db
 
 router = APIRouter()
-
-
-@router.post("/register", response_model=TokenResponse)
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    """
-    Register user
-    :param user:
-    :param db:
-    :return: UserOut
-    """
-    new_user = perform_action_auth(db, "register_user", user=user)
-
-    log_action(db,
-               user_id=new_user['new_user'].user_id,
-               action="Register",
-               description="Registered user")
-
-    return {"access_token": new_user['access_token'],
-            "token_type": "bearer",
-            "user": new_user['new_user']}
 
 
 @router.post("/login", response_model=TokenResponse)
