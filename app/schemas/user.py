@@ -28,6 +28,7 @@ class PasswordReset(BaseModel):
     """
     Password Reset Model
     """
+    username: str
     current_password: str
     new_password: str
 

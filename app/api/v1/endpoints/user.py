@@ -34,6 +34,30 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
             "token_type": "bearer",
             "user": new_user['new_user']}
 
+@router.post("/reset-password")
+def reset_password(password_reset: PasswordReset,
+                   db: Session = Depends(get_db)):
+    """
+    Reset user password
+    :param password_reset:
+    :param db:
+    :return: Success message
+    """
+
+    user = None
+    perform_action_user(db, "reset_password",
+                        user=user,
+                        new_password=password_reset.new_password,
+                        current_password=password_reset.current_password
+                        )
+
+    log_action(db,
+               user_id=user.user_id,
+               action="Reset Password",
+               description="Password reset successfully")
+
+    return {"message": "Password reset successfully"}
+
 
 @router.get("/me", response_model=UserOut)
 def get_current_user_info(current_user: User = Depends(get_current_user)):
@@ -66,31 +90,6 @@ def update_user(user_update: UserUpdate,
                description="Updated user information")
 
     return updated_user
-
-
-@router.post("/reset-password")
-def reset_password(password_reset: PasswordReset,
-                   db: Session = Depends(get_db),
-                   current_user: User = Depends(get_current_user)):
-    """
-    Reset user password
-    :param password_reset:
-    :param db:
-    :param current_user:
-    :return: Success message
-    """
-    perform_action_user(db, "reset_password",
-                        current_user=current_user,
-                        new_password=password_reset.new_password,
-                        current_password=password_reset.current_password
-                        )
-
-    log_action(db,
-               user_id=current_user.user_id,
-               action="Reset Password",
-               description="Password reset successfully")
-
-    return {"message": "Password reset successfully"}
 
 
 @router.delete("/delete")

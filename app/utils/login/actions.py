@@ -26,7 +26,12 @@ def perform_action_auth(db,
     """
     match action:
         case "login":
-            user_fetched = db.query(User).filter(User.username == request.username).first()
+            # Handling email and username for login
+            user_fetched = (db.query(User)
+                    .filter((User.username == request.username) |
+                            (User.email == request.username))
+                    .first())
+
             if not user_fetched:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -51,7 +56,10 @@ def perform_action_auth(db,
                 )
             username = kargs.get('username')
             password = kargs.get('password')
-            user_fetched = db.query(User).filter(User.username == username).first()
+            user_fetched = (db.query(User)
+                            .filter((User.username == username) |
+                                    (User.email == username))
+                            .first())
             if not user_fetched or not user_fetched.verify_password(password):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -60,7 +68,7 @@ def perform_action_auth(db,
                 )
 
             access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-            access_token = create_access_token(data={"sub": username},
+            access_token = create_access_token(data={"sub": user_fetched.username},
                                                expires_delta=access_token_expires)
 
             return {"access_token": access_token, "user": user_fetched}
