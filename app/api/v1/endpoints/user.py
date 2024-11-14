@@ -9,7 +9,6 @@ from app.db.models import User
 from app.db.mysql import get_db, get_current_user
 from app.schemas.login import TokenResponse
 from app.schemas.user import UserCreate, UserOut, UserUpdate, PasswordReset
-from app.utils.audit.actions import log_action
 from app.utils.user.actions import perform_action_user
 
 router = APIRouter()
@@ -23,16 +22,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     :param db:
     :return: UserOut
     """
-    new_user = perform_action_user(db, "register_user", user=user)
-
-    log_action(db,
-               user_id=new_user['new_user'].user_id,
-               action="Register",
-               description="Registered user")
-
-    return {"access_token": new_user['access_token'],
-            "token_type": "bearer",
-            "user": new_user['new_user']}
+    return perform_action_user(db, "register_user", user=user)
 
 
 @router.post("/reset-password")
@@ -45,28 +35,24 @@ def reset_password(password_reset: PasswordReset,
     :return: Success message
     """
 
-    updated_user = perform_action_user(db, "reset_password",
-                                       user_username=password_reset.username,
-                                       new_password=password_reset.new_password,
-                                       current_password=password_reset.current_password
-                                       )
-
-    log_action(db,
-               user_id=updated_user['user']['user_id'],
-               action="Reset Password",
-               description="Password reset successfully")
-
-    return {"message": "Password reset successfully"}
+    return perform_action_user(db, "reset_password",
+                               user_username=password_reset.username,
+                               new_password=password_reset.new_password,
+                               current_password=password_reset.current_password
+                               )
 
 
 @router.get("/me", response_model=UserOut)
-def get_current_user_info(current_user: User = Depends(get_current_user)):
+def get_current_user_info(current_user: User = Depends(get_current_user),
+                          db: Session = Depends(get_db)):
     """
     Get current user information
     :param current_user:
     :return: UserOut
     """
-    return current_user
+    return perform_action_user(db,
+                               "me",
+                               current_user=current_user)
 
 
 @router.put("/update", response_model=UserOut)
@@ -80,16 +66,9 @@ def update_user(user_update: UserUpdate,
     :param current_user:
     :return: UserOut
     """
-    updated_user = perform_action_user(db, "update_user",
-                                       user=user_update,
-                                       current_user=current_user)
-
-    log_action(db,
-               user_id=current_user.user_id,
-               action="Update",
-               description="Updated user information")
-
-    return updated_user
+    return perform_action_user(db, "update_user",
+                               user=user_update,
+                               current_user=current_user)
 
 
 @router.delete("/delete")
@@ -101,11 +80,6 @@ def delete_user(db: Session = Depends(get_db),
     :param current_user:
     :return: Success message
     """
-    perform_action_user(db, "delete_user", current_user=current_user)
-
-    log_action(db,
-               user_id=current_user.user_id,
-               action="Delete",
-               description="Deleted user account")
-
-    return {"message": "User deleted successfully"}
+    return perform_action_user(db,
+                               "delete_user",
+                               current_user=current_user)

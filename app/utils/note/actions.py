@@ -34,6 +34,7 @@ def perform_note_action(db, action: str,
     :param current_user: Current authenticated user
     :return: Note or response object
     """
+    result = None
     match action:
         case "get_notes":
             notes = db.query(Note).filter(Note.user_id == current_user.user_id).all()
@@ -41,8 +42,7 @@ def perform_note_action(db, action: str,
                        user_id=current_user.user_id,
                        action="get_notes",
                        description="User get notes successfully")
-            return [note_to_dict(note) for note in notes]
-
+            result = [note_to_dict(note) for note in notes]
         case "get_note_by_id":
             note_obj = db.query(Note).filter(Note.id == note_id).first()
             if not note_obj:
@@ -58,8 +58,7 @@ def perform_note_action(db, action: str,
                        action="get_note_by_id",
                        description="User get note successfully")
 
-            return note_to_dict(note_obj)
-
+            result = note_to_dict(note_obj)
         case "add_note":
             try:
                 new_note = Note(
@@ -79,7 +78,7 @@ def perform_note_action(db, action: str,
                 db.commit()
                 db.refresh(new_note)
 
-                return note_to_dict(new_note)
+                result = note_to_dict(new_note)
 
             except Exception as e:
                 db.rollback()
@@ -88,7 +87,6 @@ def perform_note_action(db, action: str,
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"An error occurred while creating the note: {str(e)}",
                 ) from e
-
         case "update_note":
             note_obj = db.query(Note).filter(Note.id == note_id).first()
             if not note_obj:
@@ -112,8 +110,7 @@ def perform_note_action(db, action: str,
 
             db.commit()
             db.refresh(note_obj)
-            return note_to_dict(note_obj)
-
+            result = note_to_dict(note_obj)
         case "delete_note":
             note_obj = db.query(Note).filter(Note.id == note_id).first()
             if not note_obj:
@@ -132,7 +129,9 @@ def perform_note_action(db, action: str,
             db.delete(note_obj)
             db.commit()
 
-            return {
+            result = {
                 "result": f"Note {note_id} has been deleted",
                 "id_note": note_id
             }
+
+    return result

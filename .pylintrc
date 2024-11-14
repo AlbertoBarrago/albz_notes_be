@@ -1,2 +1,2 @@
 [MESSAGES CONTROL]
-disable=R0903
+disable=R0903,too-many-statements,too-many-return-statements

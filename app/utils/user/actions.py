@@ -9,6 +9,7 @@ from starlette import status
 
 from app.core.access_token import generate_user_token
 from app.db.models.users import User
+from app.utils.audit.actions import log_action
 
 
 def user_to_dict(user):
@@ -35,6 +36,8 @@ def perform_action_user(db,
     :param current_user: Current authenticated user
     :return: JSON list of users or single user
     """
+    result = None
+
     match action:
         case "register_user":
             user_fetched = db.query(User).filter(User.username == user.username).first()
@@ -47,59 +50,29 @@ def perform_action_user(db,
             new_user = User(username=user.username,
                             email=user.email)
             new_user.set_password(user.password)
+
             db.add(new_user)
             db.commit()
             db.refresh(new_user)
             user_fetched = db.query(User).filter(User.username == new_user.username).first()
-            return generate_user_token(user_fetched)
 
-        case "get_user":
-            user_obj = db.query(User).filter(User.user_id == current_user.user_id).first()
-            if not user_obj:
-                raise HTTPException(status_code=404, detail="User not found")
-            return user_to_dict(user_obj)
+            log_action(db,
+                       user_id=user_fetched.user_id,
+                       action="Register",
+                       description="Registered user")
 
-        case "get_users":
-            users = db.query(User).all()
-            return [user_to_dict(user) for user in users]
-
-        case "update_user":
-            user_obj = db.query(User).filter(User.user_id == current_user.user_id).first()
-            if not user_obj:
-                raise HTTPException(status_code=404, detail="User not found")
-
-            if user_obj.user_id != current_user.user_id:
-                raise HTTPException(status_code=403, detail="Not authorized to update this user")
-
-            if user.username:
-                user_obj.username = user.username
-            if user.email:
-                user_obj.email = user.email
-
-            user_obj.updated_at = datetime.now()
-            db.commit()
-            db.refresh(user_obj)
-            return user_to_dict(user_obj)
-
-        case "delete_user":
-            user_obj = db.query(User).filter(User.user_id == current_user.user_id).first()
-            if not user_obj:
-                raise HTTPException(status_code=404, detail="User not found")
-
-            if user_obj.user_id != current_user.user_id:
-                raise HTTPException(status_code=403, detail="Not authorized to delete this user")
-
-            db.delete(user_obj)
-            db.commit()
-            return {"message": "User deleted successfully"}
-
+            result = {
+                "access_token": generate_user_token(user_fetched),
+                "token_type": "bearer",
+                "user": user_fetched
+            }
         case "reset_password":
             user_fetched = (db.query(User)
-                .filter(or_(
-                    User.username == kwargs.get('user_username'),
-                    User.email == kwargs.get('user_username')
-                ))
-                .first())
+                            .filter(or_(
+                User.username == kwargs.get('user_username'),
+                User.email == kwargs.get('user_username')
+            ))
+                            .first())
             if not user_fetched:
                 raise HTTPException(status_code=404, detail="User not found")
 
@@ -108,5 +81,82 @@ def perform_action_user(db,
 
             user_fetched.set_password(kwargs.get('new_password'))
             user_fetched.updated_at = datetime.now()
+
+            log_action(db,
+                       user_id=user_fetched.user_id,
+                       action="Reset Password",
+                       description="Password reset successfully")
             db.commit()
-            return {"message": "Password reset successfully", "user": user_to_dict(user_fetched)}
+            result = {"message": "Password reset successfully", "user": user_to_dict(user_fetched)}
+        case "me":
+            log_action(db,
+                       action="Get current user info",
+                       user_id=current_user.user_id,
+                       description="Get current user info")
+
+            result = user_to_dict(current_user)
+        case "get_user":
+            user_fetched = db.query(User).filter(User.user_id == current_user.user_id).first()
+            if not user_fetched:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            log_action(db,
+                       action="Get user info",
+                       user_id=current_user.user_id,
+                       description="Get user info")
+
+            result = user_to_dict(user_fetched)
+        case "get_users":
+            users = db.query(User).all()
+            if not users:
+                raise HTTPException(status_code=404, detail="No users found")
+            log_action(db,
+                       action="Get users",
+                       user_id=current_user.user_id,
+                       description="Get users")
+
+            result = {"users": user_to_dict(user) for user in users}
+        case "update_user":
+            user_fetched = db.query(User).filter(User.user_id == current_user.user_id).first()
+            if not user_fetched:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            if user_fetched.user_id != current_user.user_id:
+                raise HTTPException(status_code=403, detail="Not authorized to update this user")
+
+            if user.username:
+                user_fetched.username = user.username
+            if user.email:
+                user_fetched.email = user.email
+
+            user_fetched.updated_at = datetime.now()
+
+            log_action(db,
+                       user_id=current_user.user_id,
+                       action="Update",
+                       description="Updated user information")
+
+            db.commit()
+            db.refresh(user_fetched)
+
+            result = {"user": user_to_dict(user_fetched),
+                      "message": "Password reset successfully"}
+        case "delete_user":
+            user_fetched = db.query(User).filter(User.user_id == current_user.user_id).first()
+            if not user_fetched:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            if user_fetched.user_id != current_user.user_id:
+                raise HTTPException(status_code=403, detail="Not authorized to delete this user")
+
+            log_action(db,
+                       user_id=current_user.user_id,
+                       action="Delete",
+                       description="Deleted user account")
+
+            db.delete(user_fetched)
+            db.commit()
+            result = {"message": "User deleted successfully",
+                      "user": user_to_dict(user_fetched)}
+
+    return result

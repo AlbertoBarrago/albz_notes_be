@@ -13,9 +13,9 @@ from app.utils.audit.actions import log_action
 
 
 def perform_action_auth(db,
-                        action:str,
-                        request= None,
-                        grant_type = None,
+                        action: str,
+                        request=None,
+                        grant_type=None,
                         **kargs):
     """
     Perform authentication action
@@ -25,12 +25,13 @@ def perform_action_auth(db,
     :param grant_type:
     return User
     """
+    result = None
     match action:
         case "login":
             user_fetched = (db.query(User)
-                    .filter((User.username == request.username) |
-                            (User.email == request.username))
-                    .first())
+                            .filter((User.username == request.username) |
+                                    (User.email == request.username))
+                            .first())
 
             if not user_fetched:
                 raise HTTPException(
@@ -48,10 +49,10 @@ def perform_action_auth(db,
 
             log_action(db,
                        user_id=user_fetched.user_id,
-                       action="Token",
-                       description="Logged from token")
+                       action="Login",
+                       description="User logged in successfully")
 
-            return  generate_user_token(user_fetched)
+            result = generate_user_token(user_fetched)
 
         case "swagger_login":
             if grant_type != "password":
@@ -81,4 +82,7 @@ def perform_action_auth(db,
             access_token = create_access_token(data={"sub": user_fetched.username},
                                                expires_delta=access_token_expires)
 
-            return {"access_token": access_token, "user": user_fetched}
+            result = {"access_token": access_token,
+                      "user": user_fetched}
+
+    return result
