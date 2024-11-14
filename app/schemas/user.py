@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     """
     User Base Model
     """
+    role: str = "GUEST"
     username: str
     email: str
 
@@ -17,6 +18,20 @@ class UserCreate(UserBase):
     User Create Model
     """
     password: str
+
+class UserUpdate(UserBase):
+    """
+    User Update Model
+    """
+    password: str
+
+class PasswordReset(BaseModel):
+    """
+    Password Reset Model
+    """
+    username: str
+    current_password: str
+    new_password: str
 
 class UserOut(UserBase):
     """

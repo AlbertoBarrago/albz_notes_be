@@ -39,3 +39,17 @@ def decode_access_token(token: str):
         raise HTTPException(
             status_code=401,
             detail="Invalid token") from None
+
+
+def generate_user_token(user):
+    """Generate access token for user"""
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username},
+        expires_delta=access_token_expires
+    )
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user
+    }

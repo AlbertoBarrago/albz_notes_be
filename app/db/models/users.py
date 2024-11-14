@@ -27,6 +27,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    role = Column(String(50), nullable=False, default="GUEST")
 
     notes = relationship("Note", back_populates="user")
     audit = relationship("Audit", back_populates="user")
@@ -48,3 +49,4 @@ class User(Base):
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(plain_password.encode(), salt)
         self.hashed_password = hashed_password.decode()
+        return self.hashed_password
