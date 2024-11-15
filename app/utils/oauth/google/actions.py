@@ -39,12 +39,15 @@ def get_user_info(db, request):
             "error": "Informazioni utente non valide"
         }
 
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter((User.email == email) | (User.username == name)).first()
 
-    if not user.picture and picurl:
-        user.picture = picurl
-        db.commit()
-        db.refresh(user)
+    if user is None:
+        print("User is None, cannot access user.picture.")
+    else:
+        if not user.picture and picurl:
+            user.picture = picurl
+            db.commit()
+            db.refresh(user)
 
     request = TokenRequest(username=name)
 
