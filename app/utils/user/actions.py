@@ -18,6 +18,8 @@ def user_to_dict(user):
         "user_id": user.user_id,
         "username": user.username,
         "email": user.email,
+        "role": user.role,
+        "picture": user.picture,
         "created_at": user.created_at.isoformat(),
         "updated_at": user.updated_at.isoformat()
     }

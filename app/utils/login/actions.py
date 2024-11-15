@@ -1,13 +1,11 @@
 """
 Session actions
 """
-from datetime import timedelta
 
 from fastapi import HTTPException
 from starlette import status
 
-from app.core.access_token import create_access_token, generate_user_token
-from app.core.config import settings
+from app.core.access_token import generate_user_token
 from app.db.models.users import User
 from app.utils.audit.actions import log_action
 
@@ -40,19 +38,24 @@ def perform_action_auth(db,
                     headers={"WWW-Authenticate": "Bearer"},
                 )
 
-            if not user_fetched.verify_password(request.password):
+            if not kargs.get('oauth') and not user_fetched.verify_password(request.password) :
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Not Authorized",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
 
+            if kargs.get('oauth'):
+                action = "Login Oauth2"
+
             log_action(db,
                        user_id=user_fetched.user_id,
-                       action="Login",
+                       action=f"${len(action) > 0 and action or 'Login'}",
                        description="User logged in successfully")
 
+
             result = generate_user_token(user_fetched)
+
 
         case "swagger_login":
             if grant_type != "password":
@@ -78,11 +81,6 @@ def perform_action_auth(db,
                        action="Login",
                        description="Logged from swagger")
 
-            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-            access_token = create_access_token(data={"sub": user_fetched.username},
-                                               expires_delta=access_token_expires)
-
-            result = {"access_token": access_token,
-                      "user": user_fetched}
+            result = generate_user_token(user_fetched)
 
     return result
