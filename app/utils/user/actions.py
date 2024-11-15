@@ -50,7 +50,8 @@ def perform_action_user(db,
                 )
 
             new_user = User(username=user.username,
-                            email=user.email)
+                            email=user.email,
+                            role=user.role)
             new_user.set_password(user.password)
 
             db.add(new_user)
@@ -66,7 +67,7 @@ def perform_action_user(db,
             result = {
                 "access_token": generate_user_token(user_fetched),
                 "token_type": "bearer",
-                "user": user_fetched
+                "user": user_to_dict(user_fetched)
             }
         case "reset_password":
             user_fetched = (db.query(User)
