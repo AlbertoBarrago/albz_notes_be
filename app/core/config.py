@@ -24,11 +24,4 @@ class Settings(BaseSettings):
     RATE_LIMIT: int = 1000
     RATE_LIMIT_WINDOW: int = 60
 
-    class Config:
-        """
-        Config class
-        """
-        env_file = ".env"
-
-
 settings = Settings()
