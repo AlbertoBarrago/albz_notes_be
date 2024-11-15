@@ -41,7 +41,7 @@ def get_user_info(db, request):
 
     user = db.query(User).filter(User.email == email).first()
 
-    if not user.picture:
+    if not user.picture and picurl:
         user.picture = picurl
         db.commit()
         db.refresh(user)
