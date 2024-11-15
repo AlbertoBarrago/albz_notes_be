@@ -5,3 +5,4 @@ from .base import Base
 from .audit import Audit
 from .users import User
 from .notes import Note
+from .rate_limit import RateLimit

@@ -1,13 +1,13 @@
 """
     Auth Endpoint
 """
-
 from fastapi import APIRouter, Depends, Form
 from sqlalchemy.orm import Session
-from app.schemas.login import TokenRequest, TokenResponse
-from app.utils.audit.actions import log_action
+
+from app.schemas.login import TokenRequest, TokenResponse, OauthRequest
 from app.utils.login.actions import perform_action_auth
 from app.db.mysql import get_db
+from app.utils.oauth.google.actions import get_user_info
 
 router = APIRouter()
 
@@ -23,19 +23,24 @@ def login(
     :param db:
     :return: Token
     """
+    return perform_action_auth(db,
+                               "login",
+                               request)
 
-    user_logged = perform_action_auth(db,
-                                      "login",
-                                      request)
 
-    log_action(db,
-               user_id=user_logged['user'].user_id,
-               action="Token",
-               description="Logged from token")
-
-    return {"access_token": user_logged['access_token'],
-            "token_type": "bearer",
-            "user": user_logged['user']}
+@router.post("/login/google", response_model=TokenResponse)
+def login_google(request: OauthRequest,
+                 db: Session = Depends(get_db)):
+    """
+    Login from Google
+    :param request:
+    :param db:
+    :return: Token
+    """
+    return perform_action_auth(db,
+                               "login",
+                               get_user_info(db, request),
+                               oauth=True)
 
 
 @router.post("/swagger-login", response_model=TokenResponse)
@@ -52,16 +57,9 @@ def swagger_login(grant_type: str = Form(...),
     :param db:
     :return: Token
     """
-    user_logged = perform_action_auth(db, "swagger_login",
-                                      grant_type=grant_type,
-                                      username=username,
-                                      password=password)
 
-    log_action(db,
-               user_id=user_logged['user'].user_id,
-               action="Login",
-               description="Logged from swagger")
-
-    return {"access_token": user_logged['access_token'],
-            "token_type": "bearer",
-            "user": user_logged['user']}
+    return perform_action_auth(db,
+                               "swagger_login",
+                               grant_type=grant_type,
+                               username=username,
+                               password=password)

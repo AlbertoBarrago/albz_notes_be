@@ -16,6 +16,10 @@ def log_action(session,
     :param action:
     :param description:
     """
-    audit_log = Audit(user_id=user_id, action=action, description=description)
-    session.add(audit_log)
-    session.commit()
+    try:
+        audit_log = Audit(user_id=user_id, action=action, description=description)
+        session.add(audit_log)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise e

@@ -1,16 +1,18 @@
 # Notes BE
 
-Personal Be for notes-app
+A simple notes app with authentication and authorization. 
+Rate limiting and audit actions.
 
-[Notes Webapp](https://albertobarrago.github.io/)
-
-![img.png](img.png)
+⭐️ Swagger on `/docs`
+![img.png](swagger_screen.png)
+[Webapp: Notes](https://albertobarrago.github.io/)
 
 ## Feature Description
 - Python v3.12
 - FastApi BE with JWT authentication
 - Mysql, SQLAlchemy and Alembic
-- Swagger (automagically) on `/docs`
+- Rate Limiting
+- Audit actions
 
 ## Test 
 ```shell
