@@ -1,3 +1,6 @@
+"""
+    Config file
+"""
 from dotenv import load_dotenv
 from pydantic.v1 import BaseSettings
 
@@ -16,13 +19,13 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     GOOGLE_CLIENT_ID: str
     GOOGLE_SECRET_KEY: str
-    RATE_LIMIT: int  # Cambiato in int
-    RATE_LIMIT_WINDOW: int  # Cambiato in int
+    RATE_LIMIT: int
+    RATE_LIMIT_WINDOW: int
 
     class Config:
         """
         Config class
         """
-        env_file = ".env"
+        env_file = "../../.env"
 
 settings = Settings()
