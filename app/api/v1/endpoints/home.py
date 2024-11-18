@@ -6,6 +6,7 @@ from starlette.responses import HTMLResponse
 
 router = APIRouter()
 
+
 @router.get("/", response_class=HTMLResponse, tags=["Home"], include_in_schema=False)
 def home():
     """
@@ -16,7 +17,17 @@ def home():
     <!DOCTYPE html>
     <html>
         <head>
-            <title>Welcome to Albz</title>
+            <title>Webservice: Notez_Be </title>
+            <link rel="icon" type="image/x-icon" href="/static/favicon_io/favicon.ico">
+            <link rel="icon" href="data:,">
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="description" content="Welcome to Notez BE!">
+            <meta name="keywords" content="Notez, Albz, API, Documentation">
+            <meta name="author" content="Albz">
+            <meta name="robots" content="index, follow">
+            <meta name="googlebot" content="index, follow">
+            <meta name="google" content="notranslate index, follow">
         </head>
         <body style="text-align: center;">
             <h1>Welcome to Notez BE!</h1>
