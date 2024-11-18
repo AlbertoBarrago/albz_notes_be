@@ -23,7 +23,7 @@ SQLALCHEMY_DATABASE_URL = (
 try:
     engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
     with engine.connect() as connection:
-        print("Connessione al database avvenuta con successo!")
+        print(f"🚀 Connected with success! to {SQLALCHEMY_DATABASE_URL} ")
 except OperationalError as e:
     raise HTTPException(status_code=500, detail="Errore di connessione al database") \
         from e

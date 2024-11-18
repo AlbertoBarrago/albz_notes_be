@@ -22,10 +22,12 @@ def note_to_dict(note):
     }
 
 
-def perform_note_action(db, action: str,
+def perform_note_action(db,
+                        action: str,
                         note=None,
                         note_id=None,
-                        current_user=None):
+                        current_user=None,
+                        **kwargs):
     """
     Perform database actions for notes
     :param db: Database connection
@@ -33,6 +35,7 @@ def perform_note_action(db, action: str,
     :param note: Note object
     :param note_id: ID of note
     :param current_user: Current authenticated user
+    :param kwargs: Additional arguments
     :return: Note or response object
     """
     result = None
@@ -62,6 +65,34 @@ def perform_note_action(db, action: str,
                        description="User get note successfully")
 
             result = note_to_dict(note_obj)
+        case "get_note_paginated":
+            page = kwargs.get("page", 1)
+            page_size = kwargs.get("page_size", 10)
+
+            skip = (page - 1) * page_size
+
+            total = db.query(Note) \
+                .filter(Note.user_id == current_user.user_id) \
+                .count()
+
+            notes = db.query(Note) \
+                .filter(Note.user_id == current_user.user_id) \
+                .offset(skip) \
+                .limit(page_size) \
+                .all()
+
+            log_action(db,
+                       user_id=current_user.user_id,
+                       action="get_paginated_notes",
+                       description="User get paginated notes successfully")
+
+            result = {
+                "items": notes,
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "total_pages": (total + page_size - 1) // page_size
+            }
         case "add_note":
             try:
                 new_note = Note(
