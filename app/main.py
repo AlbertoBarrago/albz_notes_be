@@ -3,6 +3,8 @@ Main: Entry point for execution
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
 from app.api.v1.endpoints import login, note, user, home
 from app.core.rate_limit_middleware import RateLimitMiddleware
 
@@ -29,6 +31,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(home.router, tags=["home"])
 app.include_router(login.router, prefix="/api/v1", tags=["Login"])

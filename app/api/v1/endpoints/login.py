@@ -43,6 +43,7 @@ def login_google(request: OauthRequest,
                                oauth=True)
 
 
+
 @router.post("/swagger-login", response_model=TokenResponse)
 def swagger_login(grant_type: str = Form(...),
                   username: str = Form(...),

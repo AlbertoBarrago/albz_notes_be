@@ -7,15 +7,16 @@ from sqlalchemy.orm import Session
 
 from app.db.models import User
 from app.db.mysql import get_db, get_current_user
-from app.schemas.login import TokenResponse
-from app.schemas.user import UserCreate, UserOut, UserUpdate, PasswordReset
+from app.schemas.login import TokenResponse, OauthRequest
+from app.schemas.user import UserOut, UserPsw, PasswordReset
+from app.utils.oauth.google.actions import add_user_to_db
 from app.utils.user.actions import perform_action_user
 
 router = APIRouter()
 
 
 @router.post("/register", response_model=TokenResponse)
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
+def register_user(user: UserPsw, db: Session = Depends(get_db)):
     """
     Register user
     :param user:
@@ -23,6 +24,17 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     :return: UserOut
     """
     return perform_action_user(db, "register_user", user=user)
+
+@router.post("/register/google", response_model=TokenResponse)
+def register_from_google(request: OauthRequest,
+                 db: Session = Depends(get_db)):
+    """
+    Register from Google
+    :param request:
+    :param db:
+    :return: Token
+    """
+    return add_user_to_db(db, request)
 
 
 @router.post("/reset-password")
@@ -57,7 +69,7 @@ def get_current_user_info(current_user: User = Depends(get_current_user),
 
 
 @router.put("/update", response_model=UserOut)
-def update_user(user_update: UserUpdate,
+def update_user(user_update: UserPsw,
                 db: Session = Depends(get_db),
                 current_user: User = Depends(get_current_user)):
     """
