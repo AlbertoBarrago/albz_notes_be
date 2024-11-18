@@ -1,22 +1,25 @@
 """
  Google OAuth Actions
 """
+import secrets
+
 import requests
+from fastapi import HTTPException
+from starlette import status
 from starlette.responses import JSONResponse
 
+from app.core.access_token import generate_user_token
 from app.db.models import User
 from app.schemas.login import TokenRequest
+from app.utils.audit.actions import log_action
 
 
-
-def get_user_info(db, request):
+def get_info_from_google(token):
     """
-    Get User Info
-    :param db:
-    :param request:
+    Get info from Google
+    :param token:
     :return:
     """
-    token = request.credential
     if not token:
         return JSONResponse(content={"error": "Token not present"}, status_code=400)
 
@@ -38,19 +41,90 @@ def get_user_info(db, request):
         return {
             "error": "Informazioni utente non valide"
         }
+    return {
+        "email": email,
+        "name": name,
+        "picurl": picurl
+    }
 
-    user = db.query(User).filter(User.email == email).first()
+
+def get_user_info(db, request):
+    """
+    Get User Info
+    :param db:
+    :param request:
+    :return:
+    """
+    user_from_google = get_info_from_google(request.credential)
+
+    if "error" in user_from_google:
+        return user_from_google
+
+    user = db.query(User).filter(User.email == user_from_google['email']).first()
 
     if not user.picture:
-        user.picture = picurl
+        user.picture = user_from_google['picurl']
         db.commit()
         db.refresh(user)
 
-    request = TokenRequest(username=name)
+    request = TokenRequest(username=user_from_google['name'])
 
     if not user:
         return {
-            "error": "Utente non trovato"
+            "error": "User not found"
         }
 
     return request
+
+
+def add_user_to_db(db, request):
+    """
+    Add User to DB
+    :param db:
+    :param request:
+    :return:
+    """
+
+    user_from_google = get_info_from_google(request.credential)
+
+    if "error" in user_from_google:
+        return user_from_google
+
+    existing_user = db.query(User).filter(
+        (User.username == user_from_google['name']) |
+        (User.email == user_from_google['email'])
+    ).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User exist, try to login...",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not existing_user:
+        temp_password = secrets.token_urlsafe(32)
+        user = User(
+            email=user_from_google['email'],
+            username=user_from_google['name'],
+            picture=user_from_google['picurl'],
+        )
+        user.set_password(temp_password)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        user_fetched = db.query(User).filter(User.email == user_from_google['email']).first()
+        log_action(db,
+                   user_id=user_fetched.user_id,
+                   action="Google Registered",
+                   description="Registered user By Google")
+
+        result = {
+            "access_token": generate_user_token(user_fetched),
+            "token_type": "bearer",
+            "user": user_fetched
+        }
+
+        return result
+
+    return {"Message": "User not added provided user already exists"}
