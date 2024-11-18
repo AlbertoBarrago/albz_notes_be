@@ -5,6 +5,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+
 class UserBase(BaseModel):
     """
     User Base Model
@@ -12,18 +13,15 @@ class UserBase(BaseModel):
     role: str = "GUEST"
     username: str
     email: str
+    picture: str = None
 
-class UserCreate(UserBase):
-    """
-    User Create Model
-    """
-    password: str
 
-class UserUpdate(UserBase):
+class UserPsw(UserBase):
     """
     User Update Model
     """
     password: str
+
 
 class PasswordReset(BaseModel):
     """
@@ -33,10 +31,9 @@ class PasswordReset(BaseModel):
     current_password: str
     new_password: str
 
+
 class UserOut(UserBase):
     """
     User Out Model
     """
     created_at: datetime
-
-    model_config = {"env_file": ".env"}

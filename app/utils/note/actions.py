@@ -3,9 +3,10 @@ Note Action DB
 """
 from datetime import datetime
 from fastapi import HTTPException
+from sqlalchemy.orm import joinedload
 from starlette import status
 
-from app.db.models.notes import Note
+from app.db.models import Note
 from app.utils.audit.actions import log_action
 
 
@@ -17,7 +18,7 @@ def note_to_dict(note):
         "content": note.content,
         "created_at": note.created_at.isoformat(),
         "updated_at": note.updated_at.isoformat(),
-        "user_id": note.user_id
+        "user": note.user
     }
 
 
@@ -37,7 +38,9 @@ def perform_note_action(db, action: str,
     result = None
     match action:
         case "get_notes":
-            notes = db.query(Note).filter(Note.user_id == current_user.user_id).all()
+            notes = (db.query(Note)
+                     .filter(Note.user_id == current_user.user_id)
+                     .options(joinedload(Note.user)).all())
             log_action(db,
                        user_id=current_user.user_id,
                        action="get_notes",
