@@ -4,10 +4,9 @@
 from fastapi import APIRouter, Depends, Form
 from sqlalchemy.orm import Session
 
-from app.schemas.login import TokenRequest, TokenResponse, OauthRequest
+from app.schemas.login import TokenRequest, TokenResponse
 from app.utils.login.actions import perform_action_auth
 from app.db.mysql import get_db
-from app.utils.oauth.google.actions import get_user_info
 
 router = APIRouter()
 
@@ -28,23 +27,7 @@ def login(
                                request)
 
 
-@router.post("/login/google", response_model=TokenResponse)
-def login_google(request: OauthRequest,
-                 db: Session = Depends(get_db)):
-    """
-    Login from Google
-    :param request:
-    :param db:
-    :return: Token
-    """
-    return perform_action_auth(db,
-                               "login",
-                               get_user_info(db, request),
-                               oauth=True)
-
-
-
-@router.post("/swagger-login", response_model=TokenResponse)
+@router.post("/login/swagger", response_model=TokenResponse)
 def swagger_login(grant_type: str = Form(...),
                   username: str = Form(...),
                   password: str = Form(...),
