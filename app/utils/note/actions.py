@@ -4,9 +4,10 @@ Note Action DB
 from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql.elements import or_
 from starlette import status
 
-from app.db.models import Note
+from app.db.models import Note, User
 from app.utils.audit.actions import log_action
 
 
@@ -49,22 +50,26 @@ def perform_note_action(db,
                        action="get_notes",
                        description="User get notes successfully")
             result = [note_to_dict(note) for note in notes]
-        case "get_note_by_id":
-            note_obj = db.query(Note).filter(Note.id == note_id).first()
-            if not note_obj:
-                raise HTTPException(status_code=404,
-                                    detail="Note not found")
+        case "search_notes":
+            search_query = kwargs.get("query")
+            base_query = db.query(Note).join(User).filter(Note.user_id == current_user.user_id)
 
-            if note_obj.user_id != current_user.user_id:
-                raise HTTPException(status_code=403,
-                                    detail="You do not have permission to view this note")
+            if search_query:
+                search = f"%{search_query}%"
+                base_query = base_query.filter(
+                    or_(
+                        Note.title.ilike(search),
+                        Note.content.ilike(search),
+                        User.username.ilike(search)
+                    )
+                )
 
             log_action(db,
                        user_id=current_user.user_id,
-                       action="get_note_by_id",
-                       description="User get note successfully")
+                       action="search_notes",
+                       description="User searched notes successfully")
 
-            result = note_to_dict(note_obj)
+            result = base_query.all()
         case "get_note_paginated":
             page = kwargs.get("page", 1)
             page_size = kwargs.get("page_size", 10)
