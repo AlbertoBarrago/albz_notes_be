@@ -68,6 +68,7 @@ def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
 def get_paginated_and_filtered_notes(
         page: int = Query(default=1, gt=0),
         page_size: int = Query(default=10, gt=0, le=100),
+        sort_order: str = Query(default="asc", regex="^(asc|desc)$"),
         query: str = Query(default="", max_length=100),
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
@@ -76,6 +77,7 @@ def get_paginated_and_filtered_notes(
     Get paginated notes
     :param page:
     :param page_size:
+    :param sort_order:
     :param current_user:
     :param query:
     :param db:
@@ -84,6 +86,7 @@ def get_paginated_and_filtered_notes(
     return perform_note_action(db, "get_note_paginated",
                                current_user=current_user,
                                page=page,
+                               sort_order=sort_order,
                                query=query,
                                page_size=page_size)
 
