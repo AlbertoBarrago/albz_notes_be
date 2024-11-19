@@ -73,18 +73,34 @@ def perform_note_action(db,
         case "get_note_paginated":
             page = kwargs.get("page", 1)
             page_size = kwargs.get("page_size", 10)
+            search_query = kwargs.get("query")
+            sort_by = kwargs.get("sort_by", "created_at")
+            sort_order = kwargs.get("sort_order", "desc")
 
             skip = (page - 1) * page_size
 
-            total = db.query(Note) \
-                .filter(Note.user_id == current_user.user_id) \
-                .count()
+            query = db.query(Note).join(User).options(joinedload(Note.user)) \
+                .filter(Note.user_id == current_user.user_id)
 
-            notes = db.query(Note) \
-                .filter(Note.user_id == current_user.user_id) \
-                .offset(skip) \
-                .limit(page_size) \
-                .all()
+            if search_query:
+                search = f"%{search_query}%"
+                query = query.filter(
+                    or_(
+                        Note.title.ilike(search),
+                        Note.content.ilike(search),
+                        User.username.ilike(search)
+                    )
+                )
+
+            sort_column = getattr(Note, sort_by)
+            if sort_order == "desc":
+                query = query.order_by(sort_column.desc())
+            else:
+                query = query.order_by(sort_column.asc())
+
+            total = query.count()
+
+            notes = query.offset(skip).limit(page_size).all()
 
             log_action(db,
                        user_id=current_user.user_id,
@@ -92,11 +108,13 @@ def perform_note_action(db,
                        description="User get paginated notes successfully")
 
             result = {
-                "items": notes,
+                "items": [note_to_dict(note) for note in notes],
                 "total": total,
                 "page": page,
                 "page_size": page_size,
-                "total_pages": (total + page_size - 1) // page_size
+                "total_pages": (total + page_size - 1) // page_size,
+                "has_next": page < ((total + page_size - 1) // page_size),
+                "has_prev": page > 1
             }
         case "add_note":
             try:

@@ -1,8 +1,6 @@
 """
 Note Endpoint
 """
-from typing import List
-
 from fastapi import APIRouter, Depends, Query
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -48,9 +46,10 @@ def get_note(note_id: int,
 
 
 @router.get("/list/paginated", response_model=PaginatedResponse[NoteOut])
-def get_paginated_notes(
+def get_paginated_and_filtered_notes(
         page: int = Query(default=1, gt=0),
         page_size: int = Query(default=10, gt=0, le=100),
+        query: str = Query(default="", max_length=100),
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
@@ -59,29 +58,15 @@ def get_paginated_notes(
     :param page:
     :param page_size:
     :param current_user:
+    :param query:
     :param db:
     :return:
     """
     return perform_note_action(db, "get_note_paginated",
                                current_user=current_user,
                                page=page,
+                               query=query,
                                page_size=page_size)
-
-
-@router.get("/list/search", response_model=List[NoteOut])
-def search_notes(
-        query: str = Query(None, description="Search term for title, content or author"),
-        current_user: User = Depends(get_current_user),
-        db: Session = Depends(get_db)
-):
-    """
-    Search notes
-    :param query:
-    :param current_user:
-    :param db:
-    :return:
-    """
-    return perform_note_action(db, "search_notes", query=query, current_user=current_user)
 
 
 @router.post("/", response_model=NoteOut)
