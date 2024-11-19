@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.db.models.users import User
-from app.schemas.note import NoteOut, NoteCreate, NoteDelete
+from app.schemas.note import NoteOut, NoteCreate, NoteDelete, NoteUpdate
 from app.db.mysql import get_db, get_current_user
 from app.schemas.pagination import PaginatedResponse
 from app.utils.note.actions import perform_note_action
@@ -43,6 +43,25 @@ def get_note(note_id: int,
     return perform_note_action(db, 'get_note_by_id',
                                note_id=note_id,
                                current_user=current_user)
+
+@router.put("/{note_id}", response_model=NoteOut)
+def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
+                current_user: User = Depends(get_current_user)):
+    """
+    Update a note
+    :param note_id:
+    :param note:
+    :param db:
+    :param current_user:
+    :return: NoteOut
+    """
+
+    return perform_note_action(db,
+                               'update_note',
+                               note,
+                               note_id=note_id,
+                               current_user=current_user,
+                               )
 
 
 @router.get("/list/paginated", response_model=PaginatedResponse[NoteOut])

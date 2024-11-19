@@ -73,7 +73,7 @@ def perform_note_action(db,
         case "get_note_paginated":
             page = kwargs.get("page", 1)
             page_size = kwargs.get("page_size", 10)
-            search_query = kwargs.get("query")
+            search_query = kwargs.get("query", "").strip()
             sort_by = kwargs.get("sort_by", "created_at")
             sort_order = kwargs.get("sort_order", "desc")
 
@@ -93,6 +93,7 @@ def perform_note_action(db,
                 )
 
             sort_column = getattr(Note, sort_by)
+
             if sort_order == "desc":
                 query = query.order_by(sort_column.desc())
             else:
@@ -105,7 +106,10 @@ def perform_note_action(db,
             log_action(db,
                        user_id=current_user.user_id,
                        action="get_paginated_notes",
-                       description="User get paginated notes successfully")
+                       description=f"User get paginated "
+                                   f"notes with search: "
+                                   f"{search_query}" if search_query else "User get "
+                                                                          "paginated notes")
 
             result = {
                 "items": [note_to_dict(note) for note in notes],
@@ -114,7 +118,8 @@ def perform_note_action(db,
                 "page_size": page_size,
                 "total_pages": (total + page_size - 1) // page_size,
                 "has_next": page < ((total + page_size - 1) // page_size),
-                "has_prev": page > 1
+                "has_prev": page > 1,
+                "search_query": search_query if search_query else ""
             }
         case "add_note":
             try:
