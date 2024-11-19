@@ -3,7 +3,8 @@ Login Schema
 """
 from pydantic import BaseModel
 
-from app.schemas.user import UserBase
+from app.schemas.user import UserOut
+
 
 class OauthRequest(BaseModel):
     """
@@ -28,4 +29,4 @@ class TokenResponse(BaseModel):
     """
     access_token: str
     token_type: str
-    user: UserBase
+    user: UserOut

@@ -1,7 +1,7 @@
 """
 User Schema
 """
-from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -36,4 +36,7 @@ class UserOut(UserBase):
     """
     User Out Model
     """
-    created_at: datetime
+    user_id: str
+    username: str
+    email: str
+    picture: Optional[str] = None
