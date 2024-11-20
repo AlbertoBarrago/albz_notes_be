@@ -75,7 +75,6 @@ async def perform_action_user(db,
                        description="Registered user")
 
             result = generate_user_token_and_return_user(user_fetched)
-
         case "reset_password":
             user_fetched = (db.query(User)
                             .filter(or_(
