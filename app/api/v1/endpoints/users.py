@@ -36,7 +36,7 @@ async def reset_password(password_reset: PasswordReset,
     :return: Success message
     """
 
-    return perform_action_user(db,
+    return await perform_action_user(db,
                                "reset_password",
                                user_username=password_reset.username,
                                new_password=password_reset.new_password,
@@ -57,9 +57,9 @@ async def reset_google_password(google_req: GoogleResetRequest,
     if not payload:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 
-    return perform_action_user(db,
+    return await perform_action_user(db,
                                "reset_google_password",
-                               user_username=payload.get('username'),
+                               user_username=payload,
                                new_password=google_req.new_password)
 
 
@@ -72,7 +72,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user),
     :param db:
     :return: UserOut
     """
-    return perform_action_user(db,
+    return await perform_action_user(db,
                                "me",
                                current_user=current_user)
 
@@ -88,7 +88,7 @@ async def update_user(user_update: UserRequestAdd,
     :param current_user:
     :return: UserOut
     """
-    return perform_action_user(db, "update_user",
+    return await perform_action_user(db, "update_user",
                                user=user_update,
                                current_user=current_user)
 
@@ -102,6 +102,6 @@ async def delete_user(db: Session = Depends(get_db),
     :param current_user:
     :return: Success message
     """
-    return perform_action_user(db,
+    return await perform_action_user(db,
                                "delete_user",
                                current_user=current_user)
