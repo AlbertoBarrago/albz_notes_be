@@ -1,7 +1,6 @@
 """
 Session actions
 """
-
 from fastapi import HTTPException
 from starlette import status
 
@@ -53,7 +52,6 @@ def perform_action_auth(db,
 
 
             result = generate_user_token(user_fetched)
-
         case "swagger_login":
             if grant_type != "password":
                 raise HTTPException(

@@ -19,7 +19,7 @@ def user_to_dict(user):
         "username": user.username,
         "email": user.email,
         "role": user.role,
-        "picture": user.picture,
+        "picture": user.picture if user.picture else None,
         "created_at": user.created_at.isoformat(),
         "updated_at": user.updated_at.isoformat()
     }
@@ -64,11 +64,8 @@ def perform_action_user(db,
                        action="Register",
                        description="Registered user")
 
-            result = {
-                "access_token": generate_user_token(user_fetched),
-                "token_type": "bearer",
-                "user": user_to_dict(user_fetched)
-            }
+            result = generate_user_token(user_fetched)
+
         case "reset_password":
             user_fetched = (db.query(User)
                             .filter(or_(

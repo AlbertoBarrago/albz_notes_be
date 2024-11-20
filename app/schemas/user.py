@@ -13,7 +13,7 @@ class UserBase(BaseModel):
     role: str = "GUEST"
     username: str
     email: str
-    picture: str = None
+    picture: Optional[str] = None
 
 
 class UserPsw(UserBase):
