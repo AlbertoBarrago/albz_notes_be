@@ -7,7 +7,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 from app.core.access_token import decode_access_token
-from app.core.config import settings
+from app.core.settings import settings
 from app.db.models.rate_limit import RateLimit
 from app.db.mysql import SessionLocal
 

@@ -8,7 +8,7 @@ from pymysql import OperationalError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
-from app.core.config import settings
+from app.core.settings import settings
 from app.db.models.users import User
 
 

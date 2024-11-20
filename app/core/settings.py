@@ -1,5 +1,5 @@
 """
-    Config file
+    Settings file
 """
 import os
 
@@ -23,5 +23,11 @@ class Settings(BaseSettings):
     GOOGLE_SECRET_KEY: str = os.getenv("GOOGLE_SECRET_KEY")
     RATE_LIMIT: int = 1000
     RATE_LIMIT_WINDOW: int = 60
+    MAIL_USERNAME: str = os.getenv("MAIL_USERNAME")
+    MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD")
+    MAIL_FROM: str = os.getenv("MAIL_FROM")
+    MAIL_SERVER: str = os.getenv("MAIL_SERVER")
+    MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME")
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL")
 
 settings = Settings()

@@ -12,6 +12,7 @@ from app.core.access_token import generate_user_token
 from app.db.models import User
 from app.schemas.login import TokenRequest
 from app.utils.audit.actions import log_action
+from app.utils.email.email_service import EmailService
 
 
 def get_info_from_google(token):
@@ -56,10 +57,10 @@ def get_user_info(db, request):
     """
     user_from_google = get_info_from_google(request.credential)
 
-    if "error" in user_from_google:
-        return user_from_google
-
     user = db.query(User).filter(User.email == user_from_google['email']).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
     if not user.picture:
         user.picture = user_from_google['picurl']
@@ -75,8 +76,7 @@ def get_user_info(db, request):
 
     return request
 
-
-def add_user_to_db(db, request):
+async def add_user_to_db(db, request):
     """
     Add User to DB
     :param db:
@@ -86,13 +86,8 @@ def add_user_to_db(db, request):
 
     user_from_google = get_info_from_google(request.credential)
 
-    if "error" in user_from_google:
-        return user_from_google
+    existing_user = db.query(User).filter(User.email == user_from_google['email']).first()
 
-    existing_user = db.query(User).filter(
-        (User.username == user_from_google['name']) |
-        (User.email == user_from_google['email'])
-    ).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -118,12 +113,18 @@ def add_user_to_db(db, request):
                    action="Google Registered",
                    description="Registered user By Google")
 
+        token = generate_user_token(user_fetched)
+        #Send email with temp password
+        email_service = EmailService()
+        await email_service.send_password_setup_email(
+            email=user.email,
+            username=user.username,
+            token=token
+        )
+
         result = {
-            "access_token": generate_user_token(user_fetched),
+            "access_token": token,
             "token_type": "bearer",
             "user": user_fetched
         }
-
         return result
-
-    return {"Message": "User not added provided user already exists"}

@@ -91,6 +91,24 @@ def perform_action_user(db,
                        description="Password reset successfully")
             db.commit()
             result = {"message": "Password reset successfully", "user": user_to_dict(user_fetched)}
+        case "reset_google_password":
+            user_fetched = (db.query(User)
+                            .filter(or_(
+                User.username == kwargs.get('user_username')))
+                            .first())
+
+            if not user_fetched:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            user_fetched.set_password(kwargs.get('new_password'))
+            user_fetched.updated_at = datetime.now()
+
+            log_action(db,
+                       user_id=user_fetched.user_id,
+                       action="Reset Google Password",
+                       description="Password reset successfully")
+            db.commit()
+            result = {"message": "Password reset successfully", "user": user_to_dict(user_fetched)}
         case "me":
             log_action(db,
                        action="Get current user info",

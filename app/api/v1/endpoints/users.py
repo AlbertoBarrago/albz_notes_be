@@ -7,9 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.db.models import User
 from app.db.mysql import get_db, get_current_user
-from app.schemas.login import TokenResponse, OauthRequest
-from app.schemas.user import UserOut, UserPsw, PasswordReset
-from app.utils.oauth.google.actions import add_user_to_db
+from app.schemas.login import TokenResponse
+from app.schemas.user import UserOut, UserPsw, PasswordReset, GoogleEmailRequest
 from app.utils.user.actions import perform_action_user
 
 router = APIRouter()
@@ -25,19 +24,8 @@ def register_user(user: UserPsw, db: Session = Depends(get_db)):
     """
     return perform_action_user(db, "register_user", user=user)
 
-@router.post("/register/google", response_model=TokenResponse)
-def register_from_google(request: OauthRequest,
-                 db: Session = Depends(get_db)):
-    """
-    Register from Google
-    :param request:
-    :param db:
-    :return: Token
-    """
-    return add_user_to_db(db, request)
 
-
-@router.post("/reset-password")
+@router.post("/reset/password")
 def reset_password(password_reset: PasswordReset,
                    db: Session = Depends(get_db)):
     """
@@ -47,11 +35,27 @@ def reset_password(password_reset: PasswordReset,
     :return: Success message
     """
 
-    return perform_action_user(db, "reset_password",
+    return perform_action_user(db,
+                               "reset_password",
                                user_username=password_reset.username,
                                new_password=password_reset.new_password,
-                               current_password=password_reset.current_password
-                               )
+                               current_password=password_reset.current_password)
+
+
+@router.post("/reset/google-password")
+def reset_google_password(google_email: GoogleEmailRequest,
+                          db: Session = Depends(get_db)):
+    """
+    Reset user password
+    :param google_email:
+    :param db:
+    :return: Success message
+    """
+
+    return perform_action_user(db,
+                               "reset_google_password",
+                               google_email=google_email.email,
+                               new_password=google_email.new_password)
 
 
 @router.get("/me", response_model=UserOut)

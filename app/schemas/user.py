@@ -31,6 +31,13 @@ class PasswordReset(BaseModel):
     current_password: str
     new_password: str
 
+class GoogleEmailRequest(BaseModel):
+    """
+    Google Email Request Model
+    """
+    email: str
+    new_password: str
+
 
 class UserOut(UserBase):
     """

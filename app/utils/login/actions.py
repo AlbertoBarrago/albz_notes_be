@@ -31,6 +31,7 @@ def perform_action_auth(db,
                                     (User.email == request.username))
                             .first())
 
+
             if not user_fetched:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -44,9 +45,6 @@ def perform_action_auth(db,
                     detail="Not Authorized",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
-
-            if kargs.get('oauth'):
-                action = "Login Oauth2"
 
             log_action(db,
                        user_id=user_fetched.user_id,
