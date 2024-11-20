@@ -5,6 +5,7 @@ import secrets
 
 import requests
 from fastapi import HTTPException
+from pydantic.v1 import EmailStr
 from starlette import status
 from starlette.responses import JSONResponse
 
@@ -12,7 +13,7 @@ from app.core.access_token import generate_user_token
 from app.db.models import User
 from app.schemas.login import TokenRequest
 from app.utils.audit.actions import log_action
-from app.utils.email.email_service import EmailService
+from app.email.email_service import EmailService, EmailSchema
 
 
 def get_info_from_google(token):
@@ -62,8 +63,8 @@ def get_user_info(db, request):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if not user.picture:
-        user.picture = user_from_google['picurl']
+    if not user.picture_url:
+        user.picture_url = user_from_google['picurl']
         db.commit()
         db.refresh(user)
 
@@ -100,7 +101,7 @@ async def add_user_to_db(db, request):
         user = User(
             email=user_from_google['email'],
             username=user_from_google['name'],
-            picture=user_from_google['picurl'],
+            picture_url=user_from_google['picurl'],
         )
         user.set_password(temp_password)
         db.add(user)
@@ -116,11 +117,11 @@ async def add_user_to_db(db, request):
         token = generate_user_token(user_fetched)
         #Send email with temp password
         email_service = EmailService()
-        await email_service.send_password_setup_email(
-            email=user.email,
+        email_schema = EmailSchema(
             username=user.username,
-            token=token
+            email=[EmailStr(user.email)],
         )
+        await email_service.send_password_setup_email(email_schema, token)
 
         result = {
             "access_token": token,

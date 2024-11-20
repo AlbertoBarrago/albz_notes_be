@@ -4,7 +4,7 @@ Session actions
 from fastapi import HTTPException
 from starlette import status
 
-from app.core.access_token import generate_user_token
+from app.core.access_token import generate_user_token_and_return_user
 from app.db.models.users import User
 from app.utils.audit.actions import log_action
 
@@ -51,7 +51,7 @@ def perform_action_auth(db,
                        description="User logged in successfully")
 
 
-            result = generate_user_token(user_fetched)
+            result = generate_user_token_and_return_user(user_fetched)
         case "swagger_login":
             if grant_type != "password":
                 raise HTTPException(
@@ -76,6 +76,6 @@ def perform_action_auth(db,
                        action="Login",
                        description="Logged from swagger")
 
-            result = generate_user_token(user_fetched)
+            result = generate_user_token_and_return_user(user_fetched)
 
     return result

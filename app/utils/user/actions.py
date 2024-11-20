@@ -4,12 +4,14 @@ User actions
 from datetime import datetime
 
 from fastapi import HTTPException
+from pydantic.v1 import EmailStr
 from sqlalchemy import or_
 from starlette import status
 
-from app.core.access_token import generate_user_token
+from app.core.access_token import generate_user_token_and_return_user
 from app.db.models.users import User
 from app.utils.audit.actions import log_action
+from app.email.email_service import EmailService, EmailSchema
 
 
 def user_to_dict(user):
@@ -19,17 +21,17 @@ def user_to_dict(user):
         "username": user.username,
         "email": user.email,
         "role": user.role,
-        "picture": user.picture if user.picture else None,
+        "picture": user.picture_url if user.picture_url else None,
         "created_at": user.created_at.isoformat(),
         "updated_at": user.updated_at.isoformat()
     }
 
 
-def perform_action_user(db,
-                        action: str,
-                        user=None,
-                        current_user=None,
-                        **kwargs):
+async def perform_action_user(db,
+                              action: str,
+                              user=None,
+                              current_user=None,
+                              **kwargs):
     """
     Perform database actions for users
     :param db: Database connection
@@ -54,6 +56,14 @@ def perform_action_user(db,
                             role=user.role)
             new_user.set_password(user.password)
 
+            email_service = EmailService()
+            email_schema = EmailSchema(
+                username=new_user.username,
+                email=[EmailStr(new_user.email)]
+            )
+
+            await email_service.welcome_email(email_schema)
+
             db.add(new_user)
             db.commit()
             db.refresh(new_user)
@@ -64,7 +74,7 @@ def perform_action_user(db,
                        action="Register",
                        description="Registered user")
 
-            result = generate_user_token(user_fetched)
+            result = generate_user_token_and_return_user(user_fetched)
 
         case "reset_password":
             user_fetched = (db.query(User)

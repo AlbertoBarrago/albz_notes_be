@@ -41,8 +41,11 @@ def decode_access_token(token: str):
             detail="Invalid token") from None
 
 
-def generate_user_token(user):
-    """Generate access token for user"""
+def generate_user_token_and_return_user(user):
+    """Generate access token for user and return user
+    :param user:
+    :return: access_token
+    """
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username},
@@ -53,3 +56,15 @@ def generate_user_token(user):
         "token_type": "bearer",
         "user": user
     }
+
+
+def generate_user_token(user):
+    """Generate access token for user and return token
+    :param user:
+    :return: access_token
+    """
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return create_access_token(
+        data={"sub": user.username},
+        expires_delta=access_token_expires
+    )

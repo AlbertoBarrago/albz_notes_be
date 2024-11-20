@@ -13,10 +13,9 @@ class UserBase(BaseModel):
     role: str = "GUEST"
     username: str
     email: str
-    picture: Optional[str] = None
 
 
-class UserPsw(UserBase):
+class UserRequestAdd(UserBase):
     """
     User Update Model
     """
@@ -46,4 +45,4 @@ class UserOut(UserBase):
     user_id: str
     username: str
     email: str
-    picture: Optional[str] = None
+    picture_url: Optional[str] = None
