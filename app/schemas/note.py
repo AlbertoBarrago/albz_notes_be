@@ -6,6 +6,9 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.schemas.user import UserBase
+
+
 class NoteBase(BaseModel):
     """
     NoteBase Model
@@ -21,6 +24,7 @@ class NoteCreate(NoteBase):
     NoteCreate Model
     """
 
+
 class NoteUpdate(NoteBase):
     """
     NoteUpdate Model
@@ -28,11 +32,13 @@ class NoteUpdate(NoteBase):
     title: Optional[str] = None
     content: Optional[str] = None
 
+
 class NoteOut(NoteBase):
     """
     NoteOut Model
     """
     id: int
+    user: UserBase
 
 
 class NoteDelete(BaseModel):
@@ -41,5 +47,3 @@ class NoteDelete(BaseModel):
     """
     id_note: int
     result: str
-
-    model_config = {"env_file": ".env"}

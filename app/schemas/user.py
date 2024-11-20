@@ -1,9 +1,10 @@
 """
 User Schema
 """
-from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
+
 
 class UserBase(BaseModel):
     """
@@ -13,17 +14,13 @@ class UserBase(BaseModel):
     username: str
     email: str
 
-class UserCreate(UserBase):
-    """
-    User Create Model
-    """
-    password: str
 
-class UserUpdate(UserBase):
+class UserRequestAdd(UserBase):
     """
     User Update Model
     """
     password: str
+
 
 class PasswordReset(BaseModel):
     """
@@ -33,10 +30,19 @@ class PasswordReset(BaseModel):
     current_password: str
     new_password: str
 
+class GoogleResetRequest(BaseModel):
+    """
+    Google Email Request Model
+    """
+    token: str
+    new_password: str
+
+
 class UserOut(UserBase):
     """
     User Out Model
     """
-    created_at: datetime
-
-    model_config = {"env_file": ".env"}
+    user_id: str
+    username: str
+    email: str
+    picture_url: Optional[str] = None

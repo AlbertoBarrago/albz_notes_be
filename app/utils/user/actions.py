@@ -4,12 +4,14 @@ User actions
 from datetime import datetime
 
 from fastapi import HTTPException
+from pydantic.v1 import EmailStr
 from sqlalchemy import or_
 from starlette import status
 
-from app.core.access_token import generate_user_token
+from app.core.access_token import generate_user_token_and_return_user
 from app.db.models.users import User
 from app.utils.audit.actions import log_action
+from app.email.email_service import EmailService, EmailSchema
 
 
 def user_to_dict(user):
@@ -19,17 +21,17 @@ def user_to_dict(user):
         "username": user.username,
         "email": user.email,
         "role": user.role,
-        "picture": user.picture,
+        "picture": user.picture_url if user.picture_url else None,
         "created_at": user.created_at.isoformat(),
         "updated_at": user.updated_at.isoformat()
     }
 
 
-def perform_action_user(db,
-                        action: str,
-                        user=None,
-                        current_user=None,
-                        **kwargs):
+async def perform_action_user(db,
+                              action: str,
+                              user=None,
+                              current_user=None,
+                              **kwargs):
     """
     Perform database actions for users
     :param db: Database connection
@@ -50,8 +52,17 @@ def perform_action_user(db,
                 )
 
             new_user = User(username=user.username,
-                            email=user.email)
+                            email=user.email,
+                            role=user.role)
             new_user.set_password(user.password)
+
+            email_service = EmailService()
+            email_schema = EmailSchema(
+                username=new_user.username,
+                email=[EmailStr(new_user.email)]
+            )
+
+            await email_service.welcome_email(email_schema)
 
             db.add(new_user)
             db.commit()
@@ -63,11 +74,7 @@ def perform_action_user(db,
                        action="Register",
                        description="Registered user")
 
-            result = {
-                "access_token": generate_user_token(user_fetched),
-                "token_type": "bearer",
-                "user": user_fetched
-            }
+            result = generate_user_token_and_return_user(user_fetched)
         case "reset_password":
             user_fetched = (db.query(User)
                             .filter(or_(
@@ -87,6 +94,24 @@ def perform_action_user(db,
             log_action(db,
                        user_id=user_fetched.user_id,
                        action="Reset Password",
+                       description="Password reset successfully")
+            db.commit()
+            result = {"message": "Password reset successfully", "user": user_to_dict(user_fetched)}
+        case "reset_google_password":
+            user_fetched = (db.query(User)
+                            .filter(or_(
+                User.username == kwargs.get('user_username')))
+                            .first())
+
+            if not user_fetched:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            user_fetched.set_password(kwargs.get('new_password'))
+            user_fetched.updated_at = datetime.now()
+
+            log_action(db,
+                       user_id=user_fetched.user_id,
+                       action="Reset Google Password",
                        description="Password reset successfully")
             db.commit()
             result = {"message": "Password reset successfully", "user": user_to_dict(user_fetched)}

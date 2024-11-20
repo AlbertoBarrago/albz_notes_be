@@ -1,3 +1,6 @@
+"""
+ Rate Limit Model
+"""
 from sqlalchemy import Column, String, Integer, DateTime
 
 from app.db.models import Base

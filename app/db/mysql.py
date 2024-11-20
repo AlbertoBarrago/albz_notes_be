@@ -4,22 +4,33 @@ Dependency Utils
 import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
+from pymysql import OperationalError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
-from app.core.config import settings
+from app.core.settings import settings
 from app.db.models.users import User
 
-SQLALCHEMY_DATABASE_URL = (f"mysql+pymysql://"
-                           f"{settings.MYSQL_USER}:"
-                           f"{settings.MYSQL_PASSWORD}"
-                           f"@{settings.MYSQL_HOST}"
-                           f"/{settings.MYSQL_DATABASE}")
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
+SQLALCHEMY_DATABASE_URL = (
+    f"mysql+pymysql://"
+    f"{settings.MYSQL_USER}:"
+    f"{settings.MYSQL_PASSWORD}"
+    f"@{settings.MYSQL_HOST}"
+    f"/{settings.MYSQL_DATABASE}"
+)
+
+try:
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
+    with engine.connect() as connection:
+        print(f"🚀 Connected with success! to {SQLALCHEMY_DATABASE_URL} ")
+except OperationalError as e:
+    raise HTTPException(status_code=500, detail="Errore di connessione al database") \
+        from e
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/swagger-login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/login/swagger")
 
 
 def get_db():
