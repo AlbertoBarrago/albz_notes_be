@@ -1,7 +1,7 @@
 """
     Auth Endpoint
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.schemas.login import TokenResponse, OauthRequest
@@ -26,13 +26,16 @@ def login_google(request: OauthRequest,
                                get_user_info(db, request),
                                oauth=True)
 
+
 @router.post("/register/google", response_model=TokenResponse)
 def register_from_google(request: OauthRequest,
-                 db: Session = Depends(get_db)):
+                         background_tasks: BackgroundTasks,
+                         db: Session = Depends(get_db)):
     """
     Register from Google
     :param request:
+    :param background_tasks:
     :param db:
     :return: Token
     """
-    return add_user_to_db(db, request)
+    return add_user_to_db(db, request, background_tasks)

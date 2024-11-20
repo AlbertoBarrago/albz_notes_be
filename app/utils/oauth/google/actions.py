@@ -77,14 +77,15 @@ def get_user_info(db, request):
 
     return request
 
-async def add_user_to_db(db, request):
+def add_user_to_db(db, request, background_tasks):
     """
     Add User to DB
     :param db:
     :param request:
+    :param background_tasks:
     :return:
     """
-
+    result = None
     user_from_google = get_info_from_google(request.credential)
 
     existing_user = db.query(User).filter(User.email == user_from_google['email']).first()
@@ -121,11 +122,15 @@ async def add_user_to_db(db, request):
             username=user.username,
             email=[EmailStr(user.email)],
         )
-        await email_service.send_password_setup_email(email_schema, token)
+        background_tasks.add_task(
+            email_service.send_password_setup_email,
+            email_schema,
+            token
+        )
 
         result = {
             "access_token": token,
             "token_type": "bearer",
             "user": user_fetched
         }
-        return result
+    return result
