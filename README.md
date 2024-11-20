@@ -39,7 +39,7 @@ pytest -p no:warnings test/**/*.py
  - [x] Improve Error Handling
  - [x] Audit action notes and auth 
  - [x] Check import
- - [x] Add home API for Welcome localhost:/ 
+ - [x] Add home API for Welcome localhost:/
  - [ ] Add BackOffice API (get_users, get_notes, get_audit)
 
 
@@ -50,4 +50,4 @@ pytest -p no:warnings test/**/*.py
  - `alembic upgrade head`
 
 ## N.B.
-Please if you don't find some requirements, or have some problem during installing steps; Send me a PM. I really appreciate ♥️  
+Please if you don't find some requirements, or have some problem during installing steps; Send me a PM. I really appreciate ♥️
