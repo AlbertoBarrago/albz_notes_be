@@ -9,7 +9,7 @@ from app.db.models.users import User
 from app.schemas.note import NoteOut, NoteCreate, NoteDelete, NoteUpdate
 from app.db.mysql import get_db, get_current_user
 from app.schemas.pagination import PaginatedResponse
-from app.utils.note.actions import perform_note_action
+from app.utils.note.actions import NoteManager
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/token')
 
@@ -25,7 +25,8 @@ def get_notes(db: Session = Depends(get_db),
     :param current_user:
     :return: NoteOut
     """
-    return perform_note_action(db, 'get_notes', current_user=current_user)
+    return NoteManager(db).perform_note_action('get_notes',
+                                               current_user=current_user)
 
 
 @router.get("/{note_id}", response_model=NoteOut)
@@ -40,9 +41,10 @@ def get_note(note_id: int,
     :return: NoteOut
     """
 
-    return perform_note_action(db, 'get_note_by_id',
-                               note_id=note_id,
-                               current_user=current_user)
+    return NoteManager(db).perform_note_action('get_note_by_id',
+                                               note_id=note_id,
+                                               current_user=current_user)
+
 
 @router.put("/{note_id}", response_model=NoteOut)
 def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
@@ -56,12 +58,10 @@ def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
     :return: NoteOut
     """
 
-    return perform_note_action(db,
-                               'update_note',
-                               note,
-                               note_id=note_id,
-                               current_user=current_user,
-                               )
+    return NoteManager(db).perform_note_action('update_note',
+                                               note,
+                                               note_id=note_id,
+                                               current_user=current_user)
 
 
 @router.get("/list/paginated", response_model=PaginatedResponse[NoteOut])
@@ -83,12 +83,12 @@ def get_paginated_and_filtered_notes(
     :param db:
     :return:
     """
-    return perform_note_action(db, "get_note_paginated",
-                               current_user=current_user,
-                               page=page,
-                               sort_order=sort_order,
-                               query=query,
-                               page_size=page_size)
+    return NoteManager(db).perform_note_action("get_note_paginated",
+                                               current_user=current_user,
+                                               page=page,
+                                               sort_order=sort_order,
+                                               query=query,
+                                               page_size=page_size)
 
 
 @router.post("/", response_model=NoteOut)
@@ -103,10 +103,9 @@ def add_note(note: NoteCreate,
     :return: NoteOut
     """
 
-    return perform_note_action(db,
-                               'add_note',
-                               note,
-                               current_user=current_user)
+    return NoteManager(db).perform_note_action('add_note',
+                                               note,
+                                               current_user=current_user)
 
 
 @router.delete("/{note_id}", response_model=NoteDelete)
@@ -121,7 +120,6 @@ def delete_note(note_id: int,
     :return: NoteDelete
     """
 
-    return perform_note_action(db,
-                               "delete_note",
-                               note_id=note_id,
-                               current_user=current_user)
+    return NoteManager(db).perform_note_action("delete_note",
+                                               note_id=note_id,
+                                               current_user=current_user)
