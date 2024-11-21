@@ -36,6 +36,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(home.router, tags=["home"])

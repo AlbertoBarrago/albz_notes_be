@@ -10,7 +10,7 @@ from starlette import status
 
 from app.core.access_token import generate_user_token_and_return_user
 from app.db.models.users import User
-from app.utils.audit.actions import log_action
+from app.utils.audit.actions import logger
 from app.email.email_service import EmailService, EmailSchema
 
 
@@ -69,10 +69,10 @@ async def perform_action_user(db,
             db.refresh(new_user)
             user_fetched = db.query(User).filter(User.username == new_user.username).first()
 
-            log_action(db,
-                       user_id=user_fetched.user_id,
-                       action="Register",
-                       description="Registered user")
+            logger(db,
+                   user_id=user_fetched.user_id,
+                   action="Register",
+                   description="Registered user")
 
             result = generate_user_token_and_return_user(user_fetched)
         case "reset_password":
@@ -91,10 +91,10 @@ async def perform_action_user(db,
             user_fetched.set_password(kwargs.get('new_password'))
             user_fetched.updated_at = datetime.now()
 
-            log_action(db,
-                       user_id=user_fetched.user_id,
-                       action="Reset Password",
-                       description="Password reset successfully")
+            logger(db,
+                   user_id=user_fetched.user_id,
+                   action="Reset Password",
+                   description="Password reset successfully")
             db.commit()
             result = {"message": "Password reset successfully", "user": user_to_dict(user_fetched)}
         case "reset_google_password":
@@ -109,17 +109,17 @@ async def perform_action_user(db,
             user_fetched.set_password(kwargs.get('new_password'))
             user_fetched.updated_at = datetime.now()
 
-            log_action(db,
-                       user_id=user_fetched.user_id,
-                       action="Reset Google Password",
-                       description="Password reset successfully")
+            logger(db,
+                   user_id=user_fetched.user_id,
+                   action="Reset Google Password",
+                   description="Password reset successfully")
             db.commit()
             result = {"message": "Password reset successfully", "user": user_to_dict(user_fetched)}
         case "me":
-            log_action(db,
-                       action="Get current user info",
-                       user_id=current_user.user_id,
-                       description="Get current user info")
+            logger(db,
+                   action="Get current user info",
+                   user_id=current_user.user_id,
+                   description="Get current user info")
 
             result = user_to_dict(current_user)
         case "get_user":
@@ -127,20 +127,20 @@ async def perform_action_user(db,
             if not user_fetched:
                 raise HTTPException(status_code=404, detail="User not found")
 
-            log_action(db,
-                       action="Get user info",
-                       user_id=current_user.user_id,
-                       description="Get user info")
+            logger(db,
+                   action="Get user info",
+                   user_id=current_user.user_id,
+                   description="Get user info")
 
             result = user_to_dict(user_fetched)
         case "get_users":
             users = db.query(User).all()
             if not users:
                 raise HTTPException(status_code=404, detail="No users found")
-            log_action(db,
-                       action="Get users",
-                       user_id=current_user.user_id,
-                       description="Get users")
+            logger(db,
+                   action="Get users",
+                   user_id=current_user.user_id,
+                   description="Get users")
 
             result = {"users": user_to_dict(user) for user in users}
         case "update_user":
@@ -158,10 +158,10 @@ async def perform_action_user(db,
 
             user_fetched.updated_at = datetime.now()
 
-            log_action(db,
-                       user_id=current_user.user_id,
-                       action="Update",
-                       description="Updated user information")
+            logger(db,
+                   user_id=current_user.user_id,
+                   action="Update",
+                   description="Updated user information")
 
             db.commit()
             db.refresh(user_fetched)
@@ -176,10 +176,10 @@ async def perform_action_user(db,
             if user_fetched.user_id != current_user.user_id:
                 raise HTTPException(status_code=403, detail="Not authorized to delete this user")
 
-            log_action(db,
-                       user_id=current_user.user_id,
-                       action="Delete",
-                       description="Deleted user account")
+            logger(db,
+                   user_id=current_user.user_id,
+                   action="Delete",
+                   description="Deleted user account")
 
             db.delete(user_fetched)
             db.commit()

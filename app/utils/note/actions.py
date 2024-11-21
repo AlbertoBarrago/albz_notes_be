@@ -8,7 +8,7 @@ from sqlalchemy.sql.elements import or_
 from starlette import status
 
 from app.db.models import Note, User
-from app.utils.audit.actions import log_action
+from app.utils.audit.actions import logger
 
 
 def note_to_dict(note):
@@ -45,10 +45,10 @@ def perform_note_action(db,
             notes = (db.query(Note)
                      .filter(Note.user_id == current_user.user_id)
                      .options(joinedload(Note.user)).all())
-            log_action(db,
-                       user_id=current_user.user_id,
-                       action="get_notes",
-                       description="User get notes successfully")
+            logger(db,
+                   user_id=current_user.user_id,
+                   action="get_notes",
+                   description="User get notes successfully")
             result = [note_to_dict(note) for note in notes]
         case "search_notes":
             search_query = kwargs.get("query")
@@ -64,10 +64,10 @@ def perform_note_action(db,
                     )
                 )
 
-            log_action(db,
-                       user_id=current_user.user_id,
-                       action="search_notes",
-                       description="User searched notes successfully")
+            logger(db,
+                   user_id=current_user.user_id,
+                   action="search_notes",
+                   description="User searched notes successfully")
 
             result = base_query.all()
         case "get_note_paginated":
@@ -103,10 +103,10 @@ def perform_note_action(db,
 
             notes = query.offset(skip).limit(page_size).all()
 
-            log_action(db,
-                       user_id=current_user.user_id,
-                       action="get_paginated_notes",
-                       description=f"User get paginated "
+            logger(db,
+                   user_id=current_user.user_id,
+                   action="get_paginated_notes",
+                   description=f"User get paginated "
                                    f"notes with search: "
                                    f"{search_query}" if search_query else "User get "
                                                                           "paginated notes")
@@ -131,10 +131,10 @@ def perform_note_action(db,
                     user_id=current_user.user_id
                 )
 
-                log_action(db,
-                           user_id=current_user.user_id,
-                           action="create_note",
-                           description="User create note successfully")
+                logger(db,
+                       user_id=current_user.user_id,
+                       action="create_note",
+                       description="User create note successfully")
 
                 db.add(new_note)
                 db.commit()
@@ -165,10 +165,10 @@ def perform_note_action(db,
                 note_obj.content = note.content
             note_obj.updated_at = datetime.now()
 
-            log_action(db,
-                       user_id=current_user.user_id,
-                       action="update_note",
-                       description="User update note successfully")
+            logger(db,
+                   user_id=current_user.user_id,
+                   action="update_note",
+                   description="User update note successfully")
 
             db.commit()
             db.refresh(note_obj)
@@ -183,10 +183,10 @@ def perform_note_action(db,
                 raise HTTPException(status_code=403,
                                     detail="You do not have permission to delete this note")
 
-            log_action(db,
-                       user_id=current_user.user_id,
-                       action="delete_note",
-                       description="User delete note successfully")
+            logger(db,
+                   user_id=current_user.user_id,
+                   action="delete_note",
+                   description="User delete note successfully")
 
             db.delete(note_obj)
             db.commit()
