@@ -5,12 +5,13 @@ from datetime import datetime
 from fastapi import HTTPException
 from pydantic.v1 import EmailStr
 from sqlalchemy import or_
-from starlette import status
 
 from app.core.access_token import generate_user_token_and_return_user
 from app.db.models.users import User
 from app.utils.audit.actions import logger
 from app.email.email_service import EmailService, EmailSchema
+from app.utils.error.user import UserErrorHandler
+
 
 class UserManager:
     """
@@ -43,7 +44,7 @@ class UserManager:
             "username": user.username,
             "email": user.email,
             "role": user.role,
-            "picture": user.picture_url if user.picture_url else None,
+            "picture_url": user.picture_url if user.picture_url else None,
             "created_at": user.created_at.isoformat(),
             "updated_at": user.updated_at.isoformat()
         }
@@ -54,10 +55,7 @@ class UserManager:
         """
         user_fetched = self._get_user(username=user.username)
         if user_fetched:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already registered"
-            )
+            UserErrorHandler.raise_user_exists()
 
         new_user = User(username=user.username, email=user.email, role=user.role)
         new_user.set_password(user.password)
@@ -83,9 +81,9 @@ class UserManager:
         """
         user = self._get_user(username=user_username)
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            UserErrorHandler.raise_user_not_found()
         if not user.verify_password(current_password):
-            raise HTTPException(status_code=400, detail="Incorrect current password")
+            UserErrorHandler.raise_password_not_match()
 
         user.set_password(new_password)
         user.updated_at = datetime.now()
@@ -103,7 +101,7 @@ class UserManager:
         """
         user = self._get_user(username=user_username)
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            UserErrorHandler.raise_user_not_found()
 
         user.set_password(new_password)
         user.updated_at = datetime.now()
@@ -142,7 +140,7 @@ class UserManager:
         """
         users = self.db.query(User).all()
         if not users:
-            raise HTTPException(status_code=404, detail="No users found")
+            UserErrorHandler.raise_user_not_found()
 
         self._log_action(current_user.user_id, "Get users", "Get users")
         return {"users": [self._user_to_dict(user) for user in users]}
@@ -156,9 +154,9 @@ class UserManager:
         """
         user = self._get_user(user_id=current_user.user_id)
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            UserErrorHandler.raise_user_not_found()
         if user.user_id != current_user.user_id:
-            raise HTTPException(status_code=403, detail="Not authorized to update this user")
+            UserErrorHandler.raise_unauthorized_user_action()
 
         if user_data.username:
             user.username = user_data.username
@@ -180,9 +178,9 @@ class UserManager:
         """
         user = self._get_user(user_id=current_user.user_id)
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            UserErrorHandler.raise_user_not_found()
         if user.user_id != current_user.user_id:
-            raise HTTPException(status_code=403, detail="Not authorized to delete this user")
+            UserErrorHandler.raise_unauthorized_user_action()
 
         self._log_action(current_user.user_id, "Delete", "Deleted user account")
         user_dict = self._user_to_dict(user)

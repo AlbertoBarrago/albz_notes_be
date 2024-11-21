@@ -15,7 +15,22 @@ from app.utils.user.actions import UserManager
 router = APIRouter()
 
 
-@router.post("/register", response_model=TokenResponse)
+@router.post("/register",
+             response_model=TokenResponse,
+             responses={
+                 400: {
+                     "description": "Username already registered",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "status_code": 400,
+                                 "detail": "Username already registered"
+                             }
+                         }
+                     }
+                 }
+             }
+             )
 async def register_user(user: UserRequestAdd, db: Session = Depends(get_db)):
     """
     Register user
@@ -26,7 +41,30 @@ async def register_user(user: UserRequestAdd, db: Session = Depends(get_db)):
     return await UserManager(db).perform_action_user("register_user", user=user)
 
 
-@router.post("/reset/password")
+@router.post("/reset/password", responses={
+        404: {
+            "description": "User not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "User not found",
+                        "status_code": 404
+                    }
+                }
+            }
+        },
+        400: {
+            "description": "Invalid password",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Incorrect current password",
+                        "status_code": 400
+                    }
+                }
+            }
+        }
+    })
 async def reset_password(password_reset: PasswordReset,
                          db: Session = Depends(get_db)):
     """
@@ -43,7 +81,30 @@ async def reset_password(password_reset: PasswordReset,
                                        current_password=password_reset.current_password))
 
 
-@router.post("/reset/google-password")
+@router.post("/reset/google-password", responses={
+        404: {
+            "description": "User not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "User not found",
+                        "status_code": 404
+                    }
+                }
+            }
+        },
+        400: {
+            "description": "Invalid password",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Incorrect current password",
+                        "status_code": 400
+                    }
+                }
+            }
+        }
+    })
 async def reset_google_password(google_req: GoogleResetRequest,
                                 db: Session = Depends(get_db)):
     """
@@ -77,10 +138,35 @@ async def get_current_user_info(current_user: User = Depends(get_current_user),
         current_user=current_user)
 
 
-@router.put("/update", response_model=UserOut)
+@router.put("/update",
+            response_model=UserOut,
+            responses={
+                404: {
+                    "description": "User not found",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "detail": "User not found",
+                                "status_code": 404
+                            }
+                        }
+                    }
+                },
+                403: {
+                    "description": "Not authorized",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "detail": "Not authorized to update this user",
+                                "status_code": 403
+                            }
+                        }
+                    }
+                }
+            })
 async def update_user(user_update: UserRequestAdd,
                       db: Session = Depends(get_db),
-                      current_user: User = Depends(get_current_user)):
+                      current_user: User = Depends(get_current_user),):
     """
     Update user information
     :param user_update:
@@ -93,7 +179,32 @@ async def update_user(user_update: UserRequestAdd,
                                                      current_user=current_user)
 
 
-@router.delete("/delete")
+@router.delete("/delete",
+               responses={
+                  404: {
+                       "description": "User not found",
+                       "content": {
+                           "application/json": {
+                               "example": {
+                                   "detail": "User not found",
+                                   "status_code": 404
+                               }
+                           }
+                       }
+                   },
+                   403: {
+                       "description": "Not authorized",
+                       "content": {
+                           "application/json": {
+                               "example": {
+                                   "detail": "Not authorized to delete this user",
+                                   "status_code": 403
+                               }
+                           }
+                       }
+                   }
+               }
+               )
 async def delete_user(db: Session = Depends(get_db),
                       current_user: User = Depends(get_current_user)):
     """
