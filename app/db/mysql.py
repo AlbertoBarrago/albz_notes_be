@@ -30,7 +30,7 @@ except OperationalError as e:
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/login/swagger")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/swagger")
 
 
 def get_db():

@@ -3,187 +3,237 @@ User actions
 """
 from datetime import datetime
 
+import jwt
 from fastapi import HTTPException
 from pydantic.v1 import EmailStr
 from sqlalchemy import or_
-from starlette import status
 
-from app.core.access_token import generate_user_token_and_return_user
+from app.core.access_token import generate_user_token_and_return_user, decode_access_token
 from app.db.models.users import User
-from app.utils.audit.actions import log_action
+from app.utils.audit.actions import logger
 from app.email.email_service import EmailService, EmailSchema
+from app.utils.error.user import UserErrorHandler
 
 
-def user_to_dict(user):
-    """Convert User object to dictionary"""
-    return {
-        "user_id": user.user_id,
-        "username": user.username,
-        "email": user.email,
-        "role": user.role,
-        "picture": user.picture_url if user.picture_url else None,
-        "created_at": user.created_at.isoformat(),
-        "updated_at": user.updated_at.isoformat()
-    }
-
-
-async def perform_action_user(db,
-                              action: str,
-                              user=None,
-                              current_user=None,
-                              **kwargs):
+class UserManager:
     """
-    Perform database actions for users
-    :param db: Database connection
-    :param action: Action to perform
-    :param user: User object
-    :param current_user: Current authenticated user
-    :return: JSON list of users or single user
+    User manager class
     """
-    result = None
+    def __init__(self, db):
+        self.db = db
+        self.email_service = EmailService()
 
-    match action:
-        case "register_user":
-            user_fetched = db.query(User).filter(User.username == user.username).first()
-            if user_fetched:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Username already registered"
-                )
+    def _get_user(self, user_id=None, username=None):
+        """
+        Get user from database
+        """
+        if user_id:
+            return self.db.query(User).filter(User.user_id == user_id).first()
+        return self.db.query(User).filter(
+            or_(User.username == username,
+                User.email == username)).first()
 
-            new_user = User(username=user.username,
-                            email=user.email,
-                            role=user.role)
-            new_user.set_password(user.password)
+    def _log_action(self, user_id, action, description):
+        logger(self.db, user_id=user_id, action=action, description=description)
 
-            email_service = EmailService()
-            email_schema = EmailSchema(
-                username=new_user.username,
-                email=[EmailStr(new_user.email)]
+    @staticmethod
+    def _user_to_dict(user):
+        """
+        Convert user object to dictionary
+        """
+        return {
+            "user_id": user.user_id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role,
+            "picture_url": user.picture_url if user.picture_url else None,
+            "created_at": user.created_at.isoformat(),
+            "updated_at": user.updated_at.isoformat()
+        }
+
+    async def register_user(self, user):
+        """
+        Register new user
+        """
+        user_fetched = self._get_user(username=user.username)
+        if user_fetched:
+            UserErrorHandler.raise_user_exists()
+
+        new_user = User(username=user.username, email=user.email, role=user.role)
+        new_user.set_password(user.password)
+
+        email_schema = EmailSchema(
+            username=new_user.username,
+            email=[EmailStr(new_user.email)]
+        )
+        await self.email_service.welcome_email(email_schema)
+
+        self.db.add(new_user)
+        self.db.commit()
+        self.db.refresh(new_user)
+
+        user_fetched = self._get_user(username=new_user.username)
+        self._log_action(user_fetched.user_id, "Register", "Registered user")
+
+        return generate_user_token_and_return_user(user_fetched)
+
+    def reset_password(self, user_username, current_password, new_password):
+        """
+        Reset user password
+        """
+        user = self._get_user(username=user_username)
+        if not user:
+            UserErrorHandler.raise_user_not_found()
+        if not user.verify_password(current_password):
+            UserErrorHandler.raise_password_not_match()
+
+        user.set_password(new_password)
+        user.updated_at = datetime.now()
+        self._log_action(user.user_id, "Reset Password", "Password reset successfully")
+        self.db.commit()
+
+        return {"message": "Password reset successfully", "user": self._user_to_dict(user)}
+
+    def reset_google_password(self, user_username, new_password):
+        """
+        Reset user password from Google
+        :param user_username:
+        :param new_password:
+        :return: Success message
+        """
+        user = self._get_user(username=user_username)
+        if not user:
+            UserErrorHandler.raise_user_not_found()
+
+        user.set_password(new_password)
+        user.updated_at = datetime.now()
+        self._log_action(user.user_id, "Reset Google Password", "Password reset successfully")
+        self.db.commit()
+
+        return {"message": "Password reset successfully", "user": self._user_to_dict(user)}
+
+    def get_current_user(self, current_user):
+        """
+        Get current user info
+        :param current_user:
+        :return: User
+        """
+        self._log_action(current_user.user_id, "Get current user info", "Get current user info")
+        return self._user_to_dict(current_user)
+
+    def get_user(self, current_user):
+        """
+        Get user info by id
+        :param current_user:
+        :return: User
+        """
+        user = self._get_user(user_id=current_user.user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        self._log_action(current_user.user_id, "Get user info", "Get user info")
+        return self._user_to_dict(user)
+
+    def get_users(self, current_user):
+        """
+        Get users info by id
+        :param current_user:
+        :return: User
+        """
+        users = self.db.query(User).all()
+        if not users:
+            UserErrorHandler.raise_user_not_found()
+
+        self._log_action(current_user.user_id, "Get users", "Get users")
+        return {"users": [self._user_to_dict(user) for user in users]}
+
+    def update_user(self, current_user, user_data):
+        """
+        Update user info
+        :param current_user:
+        :param user_data:
+        :return: User
+        """
+        user = self._get_user(user_id=current_user.user_id)
+        if not user:
+            UserErrorHandler.raise_user_not_found()
+        if user.user_id != current_user.user_id:
+            UserErrorHandler.raise_unauthorized_user_action()
+
+        if user_data.username:
+            user.username = user_data.username
+        if user_data.email:
+            user.email = user_data.email
+
+        user.updated_at = datetime.now()
+        self._log_action(current_user.user_id, "Update", "Updated user information")
+        self.db.commit()
+        self.db.refresh(user)
+
+        return {"user": self._user_to_dict(user), "message": "User updated successfully"}
+
+    def delete_user(self, current_user):
+        """
+        Delete user
+        :param current_user:
+        :return: User
+        """
+        user = self._get_user(user_id=current_user.user_id)
+        if not user:
+            UserErrorHandler.raise_user_not_found()
+        if user.user_id != current_user.user_id:
+            UserErrorHandler.raise_unauthorized_user_action()
+
+        self._log_action(current_user.user_id, "Delete", "Deleted user account")
+        user_dict = self._user_to_dict(user)
+        self.db.delete(user)
+        self.db.commit()
+
+        return {"message": "User deleted successfully", "user": user_dict}
+
+    async def perform_action_user(self, action: str, user=None, current_user=None, **kwargs):
+        """
+        Perform an action on a user
+        :param action:
+        :param user:
+        :param current_user:
+        :param kwargs:
+        :return: Success message
+        """
+        actions = {
+            "register_user": lambda: self.register_user(user),
+            "reset_password": lambda: self.reset_password(kwargs.get('user_username'),
+                                                        kwargs.get('current_password'),
+                                                        kwargs.get('new_password')),
+            "reset_google_password": lambda: self.reset_google_password(kwargs.get('user_username'),
+                                                                      kwargs.get('new_password')),
+            "me": lambda: self.get_current_user(current_user),
+            "get_user": lambda: self.get_user(current_user),
+            "get_users": lambda: self.get_users(current_user),
+            "update_user": lambda: self.update_user(current_user, user),
+            "delete_user": lambda: self.delete_user(current_user)
+        }
+
+        return await actions[action]() if action == "register_user" else actions[action]()
+
+    async def reset_google_password_with_token(self, token: str, new_password: str):
+        """
+        Reset password using Google token
+        :param token: JWT token
+        :param new_password: New password to set
+        :return: Success message with user info
+        """
+        try:
+            payload = decode_access_token(token)
+            if not payload:
+                raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+            return self.reset_google_password(
+                user_username=payload,
+                new_password=new_password
             )
-
-            await email_service.welcome_email(email_schema)
-
-            db.add(new_user)
-            db.commit()
-            db.refresh(new_user)
-            user_fetched = db.query(User).filter(User.username == new_user.username).first()
-
-            log_action(db,
-                       user_id=user_fetched.user_id,
-                       action="Register",
-                       description="Registered user")
-
-            result = generate_user_token_and_return_user(user_fetched)
-        case "reset_password":
-            user_fetched = (db.query(User)
-                            .filter(or_(
-                User.username == kwargs.get('user_username'),
-                User.email == kwargs.get('user_username')
-            ))
-                            .first())
-            if not user_fetched:
-                raise HTTPException(status_code=404, detail="User not found")
-
-            if not user_fetched.verify_password(kwargs.get('current_password')):
-                raise HTTPException(status_code=400, detail="Incorrect current password")
-
-            user_fetched.set_password(kwargs.get('new_password'))
-            user_fetched.updated_at = datetime.now()
-
-            log_action(db,
-                       user_id=user_fetched.user_id,
-                       action="Reset Password",
-                       description="Password reset successfully")
-            db.commit()
-            result = {"message": "Password reset successfully", "user": user_to_dict(user_fetched)}
-        case "reset_google_password":
-            user_fetched = (db.query(User)
-                            .filter(or_(
-                User.username == kwargs.get('user_username')))
-                            .first())
-
-            if not user_fetched:
-                raise HTTPException(status_code=404, detail="User not found")
-
-            user_fetched.set_password(kwargs.get('new_password'))
-            user_fetched.updated_at = datetime.now()
-
-            log_action(db,
-                       user_id=user_fetched.user_id,
-                       action="Reset Google Password",
-                       description="Password reset successfully")
-            db.commit()
-            result = {"message": "Password reset successfully", "user": user_to_dict(user_fetched)}
-        case "me":
-            log_action(db,
-                       action="Get current user info",
-                       user_id=current_user.user_id,
-                       description="Get current user info")
-
-            result = user_to_dict(current_user)
-        case "get_user":
-            user_fetched = db.query(User).filter(User.user_id == current_user.user_id).first()
-            if not user_fetched:
-                raise HTTPException(status_code=404, detail="User not found")
-
-            log_action(db,
-                       action="Get user info",
-                       user_id=current_user.user_id,
-                       description="Get user info")
-
-            result = user_to_dict(user_fetched)
-        case "get_users":
-            users = db.query(User).all()
-            if not users:
-                raise HTTPException(status_code=404, detail="No users found")
-            log_action(db,
-                       action="Get users",
-                       user_id=current_user.user_id,
-                       description="Get users")
-
-            result = {"users": user_to_dict(user) for user in users}
-        case "update_user":
-            user_fetched = db.query(User).filter(User.user_id == current_user.user_id).first()
-            if not user_fetched:
-                raise HTTPException(status_code=404, detail="User not found")
-
-            if user_fetched.user_id != current_user.user_id:
-                raise HTTPException(status_code=403, detail="Not authorized to update this user")
-
-            if user.username:
-                user_fetched.username = user.username
-            if user.email:
-                user_fetched.email = user.email
-
-            user_fetched.updated_at = datetime.now()
-
-            log_action(db,
-                       user_id=current_user.user_id,
-                       action="Update",
-                       description="Updated user information")
-
-            db.commit()
-            db.refresh(user_fetched)
-
-            result = {"user": user_to_dict(user_fetched),
-                      "message": "Password reset successfully"}
-        case "delete_user":
-            user_fetched = db.query(User).filter(User.user_id == current_user.user_id).first()
-            if not user_fetched:
-                raise HTTPException(status_code=404, detail="User not found")
-
-            if user_fetched.user_id != current_user.user_id:
-                raise HTTPException(status_code=403, detail="Not authorized to delete this user")
-
-            log_action(db,
-                       user_id=current_user.user_id,
-                       action="Delete",
-                       description="Deleted user account")
-
-            db.delete(user_fetched)
-            db.commit()
-            result = {"message": "User deleted successfully",
-                      "user": user_to_dict(user_fetched)}
-
-    return result
+        except jwt.exceptions.PyJWTError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not validate token, {e}"
+            ) from e

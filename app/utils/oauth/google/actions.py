@@ -4,16 +4,16 @@
 import secrets
 
 import requests
-from fastapi import HTTPException
 from pydantic.v1 import EmailStr
-from starlette import status
 from starlette.responses import JSONResponse
 
 from app.core.access_token import generate_user_token
 from app.db.models import User
 from app.schemas.login import TokenRequest
-from app.utils.audit.actions import log_action
+from app.utils.audit.actions import logger
 from app.email.email_service import EmailService, EmailSchema
+from app.utils.error.auth import AuthErrorHandler
+from app.utils.error.generic import GlobalErrorHandler
 
 
 def get_info_from_google(token):
@@ -22,6 +22,7 @@ def get_info_from_google(token):
     :param token:
     :return:
     """
+    response = None
     if not token:
         return JSONResponse(content={"error": "Token not present"}, status_code=400)
 
@@ -30,24 +31,21 @@ def get_info_from_google(token):
     try:
         response = requests.get(google_url, timeout=5)
         response.raise_for_status()
-    except requests.RequestException as e:
-        return {
-            "error": f"Errore durante la richiesta a Google: {e}"
-        }
+    except requests.RequestException:
+        AuthErrorHandler.raise_unauthorized()
 
     user_info = response.json()
     email = user_info.get('email')
     name = user_info.get('name')
     picurl = user_info.get('picture')
     if not email or not name:
-        return {
-            "error": "Informazioni utente non valide"
-        }
+        AuthErrorHandler.raise_unauthorized()
     return {
         "email": email,
         "name": name,
         "picurl": picurl
     }
+
 
 def get_user_info(db, request):
     """
@@ -58,10 +56,13 @@ def get_user_info(db, request):
     """
     user_from_google = get_info_from_google(request.credential)
 
+    if 'error' in user_from_google:
+        AuthErrorHandler.raise_invalid_token()
+
     user = db.query(User).filter(User.email == user_from_google['email']).first()
 
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        AuthErrorHandler.raise_user_not_found()
 
     if not user.picture_url:
         user.picture_url = user_from_google['picurl']
@@ -70,16 +71,12 @@ def get_user_info(db, request):
 
     request = TokenRequest(username=user_from_google['name'])
 
-    if not user:
-        return {
-            "error": "User not found"
-        }
-
     return request
+
 
 def add_user_to_db(db, request, background_tasks):
     """
-    Add User to DB
+    Add User to DB and send email
     :param db:
     :param request:
     :param background_tasks:
@@ -91,11 +88,7 @@ def add_user_to_db(db, request, background_tasks):
     existing_user = db.query(User).filter(User.email == user_from_google['email']).first()
 
     if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="User exist, try to login...",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        AuthErrorHandler.raise_existing_user_error()
 
     if not existing_user:
         temp_password = secrets.token_urlsafe(32)
@@ -110,23 +103,27 @@ def add_user_to_db(db, request, background_tasks):
         db.refresh(user)
 
         user_fetched = db.query(User).filter(User.email == user_from_google['email']).first()
-        log_action(db,
-                   user_id=user_fetched.user_id,
-                   action="Google Registered",
-                   description="Registered user By Google")
+        logger(db,
+               user_id=user_fetched.user_id,
+               action="Google Registered",
+               description="Registered user By Google")
 
         token = generate_user_token(user_fetched)
-        #Send email with temp password
-        email_service = EmailService()
-        email_schema = EmailSchema(
-            username=user.username,
-            email=[EmailStr(user.email)],
-        )
-        background_tasks.add_task(
-            email_service.send_password_setup_email,
-            email_schema,
-            token
-        )
+
+        try:
+            email_service = EmailService()
+            email_schema = EmailSchema(
+                username=user.username,
+                email=[EmailStr(user.email)],
+            )
+            background_tasks.add_task(
+                email_service.send_password_setup_email,
+                email_schema,
+                token
+            )
+        except (ConnectionError, TimeoutError):
+            GlobalErrorHandler.raise_mail_not_sent()
+
 
         result = {
             "access_token": token,

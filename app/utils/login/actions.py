@@ -1,81 +1,92 @@
 """
 Session actions
 """
-from fastapi import HTTPException
-from starlette import status
-
 from app.core.access_token import generate_user_token_and_return_user
 from app.db.models.users import User
-from app.utils.audit.actions import log_action
+from app.utils.audit.actions import logger
+from app.utils.error.auth import AuthErrorHandler
 
-
-def perform_action_auth(db,
-                        action: str,
-                        request=None,
-                        grant_type=None,
-                        **kargs):
+class LoginManager:
     """
-    Perform authentication action
-    :param db:
-    :param request:
-    :param action:
-    :param grant_type:
-    return User
+    Session manager
     """
-    result = None
-    match action:
-        case "login":
-            user_fetched = (db.query(User)
-                            .filter((User.username == request.username) |
-                                    (User.email == request.username))
-                            .first())
+    def __init__(self, db):
+        self.db = db
 
+    def _get_user(self, username):
+        """
+        Get user from database
+        :param username:
+        :return: User object
+        """
+        return (self.db.query(User)
+                .filter((User.username == username) |
+                        (User.email == username))
+                .first())
 
-            if not user_fetched:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Incorrect username or password",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
+    def _log_action(self, user_id, action, description):
+        """
+        Log action
+        :param user_id:
+        :param action:
+        :param description:
+        """
+        logger(self.db, user_id=user_id, action=action, description=description)
 
-            if not kargs.get('oauth') and not user_fetched.verify_password(request.password) :
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Not Authorized",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
+    def login(self, request, oauth=False):
+        """
+        Login user
+        :param request:
+        :param oauth:
+        :return: TokenResponse object
+        """
+        user = self._get_user(request.username)
 
-            log_action(db,
-                       user_id=user_fetched.user_id,
-                       action=f"${len(action) > 0 and action or 'Login'}",
-                       description="User logged in successfully")
+        if not user:
+            AuthErrorHandler.raise_user_not_found()
 
+        if not oauth and not user.verify_password(request.password):
+            AuthErrorHandler.raise_invalid_credentials()
 
-            result = generate_user_token_and_return_user(user_fetched)
-        case "swagger_login":
-            if grant_type != "password":
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid grant type"
-                )
-            username = kargs.get('username')
-            password = kargs.get('password')
-            user_fetched = (db.query(User)
-                            .filter((User.username == username) |
-                                    (User.email == username))
-                            .first())
-            if not user_fetched or not user_fetched.verify_password(password):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Incorrect username or password",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
+        action_name = f"${len('login') > 0 and 'login' or 'Login'}"
+        self._log_action(
+            user_id=user.user_id,
+            action=action_name,
+            description="User logged in successfully"
+        )
 
-            log_action(db,
-                       user_id=user_fetched.user_id,
-                       action="Login",
-                       description="Logged from swagger")
+        return generate_user_token_and_return_user(user)
 
-            result = generate_user_token_and_return_user(user_fetched)
+    def swagger_login(self, username, password):
+        """
+        Login user from swagger
+        :param username:
+        :param password:
+        :return: TokenResponse object
+        """
+        user = self._get_user(username)
 
-    return result
+        if not user or not user.verify_password(password):
+            AuthErrorHandler.raise_invalid_credentials()
+
+        self._log_action(
+            user_id=user.user_id,
+            action="Login",
+            description="Logged from swagger"
+        )
+
+        return generate_user_token_and_return_user(user)
+
+    def perform_action_auth(self, action: str, request=None, **kwargs):
+        """
+        Perform action auth
+        :param action:
+        :param request:
+        :param kwargs:
+        :return: TokenResponse object
+        """
+        match action:
+            case "login":
+                return self.login(request, oauth=kwargs.get('oauth', False))
+            case "swagger_login":
+                return self.swagger_login(kwargs.get('username'), kwargs.get('password'))

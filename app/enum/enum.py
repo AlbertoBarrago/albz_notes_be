@@ -1,7 +1,7 @@
 """
  Enum
 """
-from enum import Enum  # Python Enum for user roles
+from enum import Enum
 
 class UserRole(str, Enum):
     """User Role Enum"""
