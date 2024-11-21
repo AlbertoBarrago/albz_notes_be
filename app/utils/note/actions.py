@@ -2,6 +2,7 @@
 Note Action DB
 """
 from datetime import datetime
+
 from fastapi import HTTPException
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.elements import or_
@@ -9,6 +10,7 @@ from starlette import status
 
 from app.db.models import Note, User
 from app.utils.audit.actions import logger
+from app.utils.error.auth import AuthErrorHandler
 
 
 class NoteManager:
@@ -35,9 +37,14 @@ class NoteManager:
 
     def get_notes(self, current_user):
         """Get all notes for current user"""
-        notes = (self.db.query(Note)
-                 .filter(Note.user_id == current_user.user_id)
-                 .options(joinedload(Note.user)).all())
+        notes = None
+        if current_user.role == "ADMIN":
+            notes = (self.db.query(Note)
+                     .filter(
+                Note.user_id == current_user.user_id)
+                     .options(joinedload(Note.user)).all())
+        else:
+            AuthErrorHandler.raise_unauthorized()
         self._log_action(current_user.user_id, "get_notes", "User get notes successfully")
         return [self._note_to_dict(note) for note in notes]
 
