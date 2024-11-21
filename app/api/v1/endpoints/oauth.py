@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.schemas.login import TokenResponse, OauthRequest
-from app.utils.login.actions import perform_action_auth
 from app.db.mysql import get_db
+from app.utils.login.actions import LoginManager
 from app.utils.oauth.google.actions import get_user_info, add_user_to_db
 
 router = APIRouter()
@@ -52,7 +52,8 @@ def login_google(request: OauthRequest,
     :param db:
     :return: Token
     """
-    return perform_action_auth(db,
+
+    return  LoginManager(db).perform_action_auth(
                                "login",
                                get_user_info(db, request),
                                oauth=True)
