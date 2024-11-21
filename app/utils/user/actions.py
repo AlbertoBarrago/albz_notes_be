@@ -2,11 +2,13 @@
 User actions
 """
 from datetime import datetime
+
+import jwt
 from fastapi import HTTPException
 from pydantic.v1 import EmailStr
 from sqlalchemy import or_
 
-from app.core.access_token import generate_user_token_and_return_user
+from app.core.access_token import generate_user_token_and_return_user, decode_access_token
 from app.db.models.users import User
 from app.utils.audit.actions import logger
 from app.email.email_service import EmailService, EmailSchema
@@ -213,3 +215,25 @@ class UserManager:
         }
 
         return await actions[action]() if action == "register_user" else actions[action]()
+
+    async def reset_google_password_with_token(self, token: str, new_password: str):
+        """
+        Reset password using Google token
+        :param token: JWT token
+        :param new_password: New password to set
+        :return: Success message with user info
+        """
+        try:
+            payload = decode_access_token(token)
+            if not payload:
+                raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+            return self.reset_google_password(
+                user_username=payload,
+                new_password=new_password
+            )
+        except jwt.exceptions.PyJWTError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not validate token, {e}"
+            ) from e

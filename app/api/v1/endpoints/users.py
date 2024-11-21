@@ -2,10 +2,8 @@
    User Endpoints
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-
-from app.core.access_token import decode_access_token
 from app.db.models import User
 from app.db.mysql import get_db, get_current_user
 from app.schemas.login import TokenResponse
@@ -105,23 +103,20 @@ async def reset_password(password_reset: PasswordReset,
             }
         }
     })
-async def reset_google_password(google_req: GoogleResetRequest,
-                                db: Session = Depends(get_db)):
+async def reset_google_password(
+    google_req: GoogleResetRequest,
+    db: Session = Depends(get_db)
+):
     """
     Reset user password
-    :param google_req:
-    :param db:
+    :param google_req: Google reset request containing token and new password
+    :param db: Database session
     :return: Success message
     """
-
-    payload = decode_access_token(google_req.token)
-    if not payload:
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
-
-    return await UserManager(db).perform_action_user(
-        "reset_google_password",
-        user_username=payload,
-        new_password=google_req.new_password)
+    return await UserManager(db).reset_google_password_with_token(
+        token=google_req.token,
+        new_password=google_req.new_password
+    )
 
 
 @router.get("/me", response_model=UserOut)
