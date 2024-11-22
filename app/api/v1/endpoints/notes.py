@@ -20,6 +20,17 @@ router = APIRouter()
 @router.get("/",
             response_model=list[NoteOut],
             responses={
+                401: {
+                    "description": "Unauthorized",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "detail": "Unauthorized",
+                                "status_code": 401
+                            }
+                        }
+                    }
+                },
                 500: {
                     "description": "Note creation failed",
                     "content": {

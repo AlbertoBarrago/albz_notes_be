@@ -2,6 +2,7 @@
  Rate limit middleware
 """
 from datetime import datetime, timedelta
+
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
@@ -9,7 +10,6 @@ from starlette.responses import JSONResponse
 from app.core.access_token import decode_access_token
 from app.core.settings import settings
 from app.db.models.rate_limit import RateLimit
-from app.db.mysql import SessionLocal
 
 
 def _get_identifier(request: Request, ip: str) -> str:
@@ -49,15 +49,18 @@ def _get_or_create_rate_limit(identifier: str,
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Rate Limit Middleware"""
+    """
+        Rate Limit Middleware
+    """
 
-    def __init__(self, app):
+    def __init__(self, app, db_session):
         super().__init__(app)
         self.rate_limit = int(settings.RATE_LIMIT)
         self.window = int(settings.RATE_LIMIT_WINDOW)
+        self.db_session = db_session
 
     async def dispatch(self, request: Request, call_next):
-        db = SessionLocal()
+        db = self.db_session
         try:
             ip = request.client.host
             identifier = _get_identifier(request, ip)
@@ -74,6 +77,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 )
 
             db.commit()
-            return await call_next(request)
+            response = await call_next(request)
+            response.headers["X-RateLimit-Limit"] = str(
+                self.rate_limit)
+            response.headers["X-RateLimit-Remaining"] = str(
+                self.rate_limit - rate_limit.requests)
+            response.headers["X-RateLimit-Reset"] = str(
+                int(window_start.timestamp()))
+            return response
         finally:
             db.close()
