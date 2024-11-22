@@ -1,5 +1,5 @@
 """
-Setup the app
+Set up the app
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
