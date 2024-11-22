@@ -1,8 +1,6 @@
 """
  Main: Entry point for execution
 """
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.endpoints import (
@@ -12,39 +10,9 @@ from app.api.v1.endpoints import (
     home_router,
     oauth_router
 )
-from app.core import RateLimitMiddleware
-from app.db.mysql import SessionLocal
+from app.core.setup_app import create_app
 
-app = FastAPI(
-    title="Notes BE",
-    contact={
-        "name": "Alberto Barrago",
-        "email": "albertobarrago@gmail.com",
-    },
-    description="An API for creating and managing notes",
-    version="1.0.0",
-    license_info={
-        "name": "MIT License",
-        "url": "https://opensource.org/licenses/MIT",
-    },
-)
-
-origins = ["http://localhost:5173",
-           "https://albertobarrago.github.io", ]
-
-app.add_middleware(
-    RateLimitMiddleware,
-    db_session=SessionLocal
-)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["Authorization", "Content-Type"],
-)
-
-
+app = create_app()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(home_router, tags=["home"])
