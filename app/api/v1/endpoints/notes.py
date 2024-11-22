@@ -17,42 +17,86 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/token')
 router = APIRouter()
 
 
-@router.get("/",
-            response_model=list[NoteOut],
+@router.get("/list/explore",
+            response_model=PaginatedResponse[NoteOut],
             responses={
-                401: {
-                    "description": "Unauthorized",
+                404: {
+                    "description": "Notes not found",
                     "content": {
                         "application/json": {
                             "example": {
-                                "detail": "Unauthorized",
-                                "status_code": 401
-                            }
-                        }
-                    }
-                },
-                500: {
-                    "description": "Note creation failed",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "An error occurred while fetching the note",
-                                "status_code": 500
+                                "detail": "Notes not found",
+                                "status_code": 404
                             }
                         }
                     }
                 }
             })
-def get_notes(db: Session = Depends(get_db),
-              current_user: User = Depends(get_current_user)):
+def get_explore_notes(
+        page: int = Query(default=1, gt=0),
+        page_size: int = Query(default=10, gt=0, le=100),
+        sort_order: str = Query(default="asc", regex="^(asc|desc)$"),
+        query: str = Query(default="", max_length=100),
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)
+):
     """
-    Get Notes
-    :param db:
+    Get paginated notes
+    :param page:
+    :param page_size:
+    :param sort_order:
     :param current_user:
-    :return: NoteOut
+    :param query:
+    :param db:
+    :return:
     """
-    return NoteManager(db).perform_note_action('get_notes',
-                                               current_user=current_user)
+    return NoteManager(db).perform_note_action("get_explore_notes",
+                                               current_user=current_user,
+                                               page=page,
+                                               sort_order=sort_order,
+                                               query=query,
+                                               page_size=page_size)
+
+
+@router.get("/list/paginated",
+            response_model=PaginatedResponse[NoteOut],
+            responses={
+                404: {
+                    "description": "Notes not found",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "detail": "Notes not found",
+                                "status_code": 404
+                            }
+                        }
+                    }
+                }
+            })
+def get_paginated_and_filtered_notes(
+        page: int = Query(default=1, gt=0),
+        page_size: int = Query(default=10, gt=0, le=100),
+        sort_order: str = Query(default="asc", regex="^(asc|desc)$"),
+        query: str = Query(default="", max_length=100),
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)
+):
+    """
+    Get paginated notes
+    :param page:
+    :param page_size:
+    :param sort_order:
+    :param current_user:
+    :param query:
+    :param db:
+    :return:
+    """
+    return NoteManager(db).perform_note_action("get_note_paginated",
+                                               current_user=current_user,
+                                               page=page,
+                                               sort_order=sort_order,
+                                               query=query,
+                                               page_size=page_size)
 
 
 @router.get("/{note_id}",
@@ -138,47 +182,6 @@ def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
                                                note,
                                                note_id=note_id,
                                                current_user=current_user)
-
-
-@router.get("/list/paginated",
-            response_model=PaginatedResponse[NoteOut],
-            responses={
-                404: {
-                    "description": "Notes not found",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "Notes not found",
-                                "status_code": 404
-                            }
-                        }
-                    }
-                }
-            })
-def get_paginated_and_filtered_notes(
-        page: int = Query(default=1, gt=0),
-        page_size: int = Query(default=10, gt=0, le=100),
-        sort_order: str = Query(default="asc", regex="^(asc|desc)$"),
-        query: str = Query(default="", max_length=100),
-        current_user: User = Depends(get_current_user),
-        db: Session = Depends(get_db)
-):
-    """
-    Get paginated notes
-    :param page:
-    :param page_size:
-    :param sort_order:
-    :param current_user:
-    :param query:
-    :param db:
-    :return:
-    """
-    return NoteManager(db).perform_note_action("get_note_paginated",
-                                               current_user=current_user,
-                                               page=page,
-                                               sort_order=sort_order,
-                                               query=query,
-                                               page_size=page_size)
 
 
 @router.post("/",

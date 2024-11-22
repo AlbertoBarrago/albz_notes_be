@@ -6,17 +6,18 @@ from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.elements import or_
-from starlette import status
 
 from app.db.models import Note, User
 from app.utils.audit.actions import logger
 from app.utils.error.auth import AuthErrorHandler
+from app.utils.error.note import NoteErrorHandler
 
 
 class NoteManager:
     """
     Note manager class
     """
+
     def __init__(self, db):
         self.db = db
 
@@ -35,15 +36,103 @@ class NoteManager:
             "user": note.user
         }
 
-    def get_notes(self, current_user):
-        """Get all notes for current user"""
-        notes = None
-        if current_user.role == "ADMIN":
-            notes = (self.db.query(Note).all())
-        else:
-            AuthErrorHandler.raise_unauthorized()
-        self._log_action(current_user.user_id, "get_notes", "User get notes successfully")
-        return [self._note_to_dict(note) for note in notes]
+    def paginated_response(self, notes, page, page_size, search_query, total):
+        """
+        Paginated response
+        :param notes:
+        :param page:
+        :param page_size:
+        :param search_query:
+        :param total:
+        :return: Paginated response
+        """
+        return {
+            "items": [self._note_to_dict(note) for note in notes],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total + page_size - 1) // page_size,
+            "has_next": page < ((total + page_size - 1) // page_size),
+            "has_prev": page > 1,
+            "search_query": search_query
+        }
+
+    def handling_paginated_request(self,
+                                   current_user,
+                                   page,
+                                   page_size,
+                                   query,
+                                   search_query,
+                                   skip, sort_by,
+                                   sort_order):
+        """
+        Handling paginated request
+        """
+        if search_query := search_query.strip():
+            search = f"%{search_query}%"
+            query = query.filter(
+                or_(
+                    Note.title.ilike(search),
+                    Note.content.ilike(search),
+                    User.username.ilike(search)
+                )
+            )
+        sort_column = getattr(Note, sort_by)
+        query = query.order_by(sort_column.desc() if sort_order == "desc" else sort_column.asc())
+        total = query.count()
+        notes = query.offset(skip).limit(page_size).all()
+        log_description = (f"User get paginated notes with search: "
+                           f"{search_query}") if search_query \
+            else "User get paginated notes"
+        self._log_action(current_user.user_id, "get_paginated_notes", log_description)
+        return self.paginated_response(notes, page, page_size, search_query, total)
+
+    def get_public_notes(self,
+                         current_user,
+                         page=1,
+                         page_size=10,
+                         search_query="",
+                         sort_by="created_at",
+                         sort_order="desc"
+                         ):
+        """
+         Get public notes for logged user
+        """
+        skip = (page - 1) * page_size
+        query = self.db.query(Note).join(User).all()
+
+        return self.handling_paginated_request(current_user,
+                                               page,
+                                               page_size,
+                                               query,
+                                               search_query,
+                                               skip, sort_by,
+                                               sort_order)
+
+    def get_note_paginated(self, current_user,
+                           page=1,
+                           page_size=10,
+                           search_query="",
+                           sort_by="created_at",
+                           sort_order="desc"
+                           ):
+        """
+         Get paginated notes for specific user
+        """
+        skip = (page - 1) * page_size
+        query = (self.db.query(Note)
+                 .join(User)
+                 .options(joinedload(Note.user))
+                 .filter(Note.user_id == current_user.user_id))
+
+        return self.handling_paginated_request(current_user,
+                                               page,
+                                               page_size,
+                                               query,
+                                               search_query,
+                                               skip,
+                                               sort_by,
+                                               sort_order)
 
     def search_notes(self, current_user, query):
         """Search notes by query"""
@@ -62,48 +151,6 @@ class NoteManager:
         self._log_action(current_user.user_id, "search_notes", "User searched notes successfully")
         return base_query.all()
 
-    def get_note_paginated(self, current_user,
-                           page=1,
-                           page_size=10,
-                           search_query="",
-                           sort_by="created_at",
-                           sort_order="desc"):
-        """Get paginated notes with search and sorting"""
-        skip = (page - 1) * page_size
-        query = self.db.query(Note).join(User).options(joinedload(Note.user)) \
-            .filter(Note.user_id == current_user.user_id)
-
-        if search_query := search_query.strip():
-            search = f"%{search_query}%"
-            query = query.filter(
-                or_(
-                    Note.title.ilike(search),
-                    Note.content.ilike(search),
-                    User.username.ilike(search)
-                )
-            )
-
-        sort_column = getattr(Note, sort_by)
-        query = query.order_by(sort_column.desc() if sort_order == "desc" else sort_column.asc())
-        total = query.count()
-        notes = query.offset(skip).limit(page_size).all()
-
-        log_description = (f"User get paginated notes with search: "
-                           f"{search_query}") if search_query \
-            else "User get paginated notes"
-        self._log_action(current_user.user_id, "get_paginated_notes", log_description)
-
-        return {
-            "items": [self._note_to_dict(note) for note in notes],
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": (total + page_size - 1) // page_size,
-            "has_next": page < ((total + page_size - 1) // page_size),
-            "has_prev": page > 1,
-            "search_query": search_query
-        }
-
     def add_note(self, note, current_user):
         """Add new note"""
         try:
@@ -119,25 +166,21 @@ class NoteManager:
             self.db.add(new_note)
             self.db.commit()
             self.db.refresh(new_note)
-            return self._note_to_dict(new_note)
 
-        except Exception as e:
+            return self._note_to_dict(new_note)
+        except HTTPException as e:
             self.db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"An error occurred while creating the note: {str(e)}"
-            ) from e
+            NoteErrorHandler.raise_note_creation_error(e)
+            return None
 
     def update_note(self, note_id, note, current_user):
         """Update existing note"""
         note_obj = (self.db.query(Note)
                     .filter(Note.id == note_id).first())
         if not note_obj:
-            raise HTTPException(status_code=404,
-                                detail="Note not found")
+            NoteErrorHandler.raise_note_not_found()
         if note_obj.user_id != current_user.user_id:
-            raise HTTPException(status_code=403,
-                                detail="You do not have permission to update this note")
+            AuthErrorHandler.raise_unauthorized()
 
         if note.title:
             note_obj.title = note.title
@@ -155,11 +198,9 @@ class NoteManager:
         note_obj = (self.db.query(Note)
                     .filter(Note.id == note_id).first())
         if not note_obj:
-            raise HTTPException(status_code=404,
-                                detail="Note not found")
+            NoteErrorHandler.raise_note_not_found()
         if note_obj.user_id != current_user.user_id:
-            raise HTTPException(status_code=403,
-                                detail="You do not have permission to delete this note")
+            AuthErrorHandler.raise_unauthorized()
 
         self._log_action(current_user.user_id,
                          "delete_note",
@@ -184,7 +225,7 @@ class NoteManager:
         :return: Note or response object
         """
         actions = {
-            "get_notes": lambda: self.get_notes(current_user),
+            "get_notes": lambda: self.get_public_notes(current_user),
             "search_notes": lambda: self.search_notes(current_user, kwargs.get("query")),
             "get_note_paginated": lambda: self.get_note_paginated(
                 current_user,
@@ -192,7 +233,15 @@ class NoteManager:
                 kwargs.get("page_size", 10),
                 kwargs.get("query", ""),
                 kwargs.get("sort_by", "created_at"),
-                kwargs.get("sort_order", "desc")
+                kwargs.get("sort_order", "desc"),
+            ),
+            "get_explore_notes": lambda: self.get_note_paginated(
+                current_user,
+                kwargs.get("page", 1),
+                kwargs.get("page_size", 10),
+                kwargs.get("query", ""),
+                kwargs.get("sort_by", "created_at"),
+                kwargs.get("sort_order", "desc"),
             ),
             "add_note": lambda: self.add_note(note, current_user),
             "update_note": lambda: self.update_note(note_id, note, current_user),
