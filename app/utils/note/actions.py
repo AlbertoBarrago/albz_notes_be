@@ -6,17 +6,18 @@ from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.elements import or_
-from starlette import status
 
 from app.db.models import Note, User
 from app.utils.audit.actions import logger
 from app.utils.error.auth import AuthErrorHandler
+from app.utils.error.note import NoteErrorHandler
 
 
 class NoteManager:
     """
     Note manager class
     """
+
     def __init__(self, db):
         self.db = db
 
@@ -37,11 +38,10 @@ class NoteManager:
 
     def get_notes(self, current_user):
         """Get all notes for current user"""
-        notes = None
-        if current_user.role == "ADMIN":
-            notes = (self.db.query(Note).all())
-        else:
+        if current_user.role != "ADMIN":
             AuthErrorHandler.raise_unauthorized()
+
+        notes = (self.db.query(Note).all())
         self._log_action(current_user.user_id, "get_notes", "User get notes successfully")
         return [self._note_to_dict(note) for note in notes]
 
@@ -119,25 +119,21 @@ class NoteManager:
             self.db.add(new_note)
             self.db.commit()
             self.db.refresh(new_note)
-            return self._note_to_dict(new_note)
 
-        except Exception as e:
+            return self._note_to_dict(new_note)
+        except HTTPException as e:
             self.db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"An error occurred while creating the note: {str(e)}"
-            ) from e
+            NoteErrorHandler.raise_note_creation_error(e)
+            return None
 
     def update_note(self, note_id, note, current_user):
         """Update existing note"""
         note_obj = (self.db.query(Note)
                     .filter(Note.id == note_id).first())
         if not note_obj:
-            raise HTTPException(status_code=404,
-                                detail="Note not found")
+            NoteErrorHandler.raise_note_not_found()
         if note_obj.user_id != current_user.user_id:
-            raise HTTPException(status_code=403,
-                                detail="You do not have permission to update this note")
+            AuthErrorHandler.raise_unauthorized()
 
         if note.title:
             note_obj.title = note.title
@@ -155,11 +151,9 @@ class NoteManager:
         note_obj = (self.db.query(Note)
                     .filter(Note.id == note_id).first())
         if not note_obj:
-            raise HTTPException(status_code=404,
-                                detail="Note not found")
+            NoteErrorHandler.raise_note_not_found()
         if note_obj.user_id != current_user.user_id:
-            raise HTTPException(status_code=403,
-                                detail="You do not have permission to delete this note")
+            AuthErrorHandler.raise_unauthorized()
 
         self._log_action(current_user.user_id,
                          "delete_note",
