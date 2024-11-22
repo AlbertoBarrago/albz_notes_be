@@ -60,7 +60,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.db_session = db_session
 
     async def dispatch(self, request: Request, call_next):
-        db = self.db_session
+        db = self.db_session()
         try:
             ip = request.client.host
             identifier = _get_identifier(request, ip)

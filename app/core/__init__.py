@@ -2,7 +2,7 @@
 This module contains the core functionality of the application.
 """
 from .access_token import *
-from .rate_limit_middleware import *
+from .rate_limit import *
 from .settings import *
 
 __all__ = [
