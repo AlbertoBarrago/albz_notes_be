@@ -4,6 +4,7 @@
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+
 from app.db.models import User
 from app.db.mysql import get_db, get_current_user
 from app.schemas.login import TokenResponse
@@ -39,30 +40,31 @@ async def register_user(user: UserRequestAdd, db: Session = Depends(get_db)):
     return await UserManager(db).perform_action_user("register_user", user=user)
 
 
-@router.post("/reset/password", responses={
-        404: {
-            "description": "User not found",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "User not found",
-                        "status_code": 404
-                    }
-                }
-            }
-        },
-        400: {
-            "description": "Invalid password",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Incorrect current password",
-                        "status_code": 400
-                    }
-                }
-            }
-        }
-    })
+@router.post("/reset/password",
+             responses={
+                 404: {
+                     "description": "User not found",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "detail": "User not found",
+                                 "status_code": 404
+                             }
+                         }
+                     }
+                 },
+                 400: {
+                     "description": "Invalid password",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "detail": "Incorrect current password",
+                                 "status_code": 400
+                             }
+                         }
+                     }
+                 }
+             })
 async def reset_password(password_reset: PasswordReset,
                          db: Session = Depends(get_db)):
     """
@@ -79,33 +81,34 @@ async def reset_password(password_reset: PasswordReset,
                                        current_password=password_reset.current_password))
 
 
-@router.post("/reset/google-password", responses={
-        404: {
-            "description": "User not found",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "User not found",
-                        "status_code": 404
-                    }
-                }
-            }
-        },
-        400: {
-            "description": "Invalid password",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Incorrect current password",
-                        "status_code": 400
-                    }
-                }
-            }
-        }
-    })
+@router.post("/reset/google-password",
+             responses={
+                 404: {
+                     "description": "User not found",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "detail": "User not found",
+                                 "status_code": 404
+                             }
+                         }
+                     }
+                 },
+                 400: {
+                     "description": "Invalid password",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "detail": "Incorrect current password",
+                                 "status_code": 400
+                             }
+                         }
+                     }
+                 }
+             })
 async def reset_google_password(
-    google_req: GoogleResetRequest,
-    db: Session = Depends(get_db)
+        google_req: GoogleResetRequest,
+        db: Session = Depends(get_db)
 ):
     """
     Reset user password
@@ -161,7 +164,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user),
             })
 async def update_user(user_update: UserRequestAdd,
                       db: Session = Depends(get_db),
-                      current_user: User = Depends(get_current_user),):
+                      current_user: User = Depends(get_current_user), ):
     """
     Update user information
     :param user_update:
@@ -176,7 +179,7 @@ async def update_user(user_update: UserRequestAdd,
 
 @router.delete("/delete",
                responses={
-                  404: {
+                   404: {
                        "description": "User not found",
                        "content": {
                            "application/json": {
