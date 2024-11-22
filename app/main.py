@@ -5,8 +5,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.v1.endpoints import login, notes, users, home, oauth
-from app.core.rate_limit_middleware import RateLimitMiddleware
+from app.api.v1.endpoints import (
+    login_router,
+    notes_router,
+    users_router,
+    home_router,
+    oauth_router
+)
+from app.core import RateLimitMiddleware
 
 app = FastAPI(
     title="Notes BE",
@@ -39,8 +45,12 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app.include_router(home.router, tags=["home"])
-app.include_router(login.router, prefix="/api/v1", tags=["Login"])
-app.include_router(oauth.router, prefix="/api/v1", tags=["OAuth"])
-app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
-app.include_router(notes.router, prefix="/api/v1/notes", tags=["Notes"])
+app.include_router(home_router, tags=["home"])
+app.include_router(
+    login_router, prefix="/api/v1", tags=["Login"])
+app.include_router(
+    oauth_router, prefix="/api/v1", tags=["OAuth"])
+app.include_router(
+    users_router, prefix="/api/v1/users", tags=["Users"])
+app.include_router(
+    notes_router, prefix="/api/v1/notes", tags=["Notes"])

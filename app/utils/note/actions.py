@@ -39,10 +39,7 @@ class NoteManager:
         """Get all notes for current user"""
         notes = None
         if current_user.role == "ADMIN":
-            notes = (self.db.query(Note)
-                     .filter(
-                Note.user_id == current_user.user_id)
-                     .options(joinedload(Note.user)).all())
+            notes = (self.db.query(Note).all())
         else:
             AuthErrorHandler.raise_unauthorized()
         self._log_action(current_user.user_id, "get_notes", "User get notes successfully")
