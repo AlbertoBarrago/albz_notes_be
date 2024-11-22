@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     oauth_router
 )
 from app.core import RateLimitMiddleware
+from app.db.mysql import SessionLocal
 
 app = FastAPI(
     title="Notes BE",
@@ -32,7 +33,8 @@ origins = ["http://localhost:5173",
            "https://albertobarrago.github.io", ]
 
 app.add_middleware(
-    RateLimitMiddleware
+    RateLimitMiddleware,
+    db_session=SessionLocal
 )
 app.add_middleware(
     CORSMiddleware,
