@@ -79,15 +79,17 @@ class NoteManager:
             )
         sort_column = getattr(Note, sort_by)
         query = query.order_by(sort_column.desc() if sort_order == "desc" else sort_column.asc())
+
         total = query.count()
         notes = query.offset(skip).limit(page_size).all()
+
         log_description = (f"User get paginated notes with search: "
                            f"{search_query}") if search_query \
             else "User get paginated notes"
         self._log_action(current_user.user_id, "get_paginated_notes", log_description)
         return self.paginated_response(notes, page, page_size, search_query, total)
 
-    def get_public_notes(self,
+    def get_explore_notes(self,
                          current_user,
                          page=1,
                          page_size=10,
@@ -99,7 +101,7 @@ class NoteManager:
          Get public notes for logged user
         """
         skip = (page - 1) * page_size
-        query = self.db.query(Note).join(User).all()
+        query = self.db.query(Note).join(User, Note.user_id == User.user_id, isouter=True)
 
         return self.handling_paginated_request(current_user,
                                                page,
@@ -225,7 +227,6 @@ class NoteManager:
         :return: Note or response object
         """
         actions = {
-            "get_notes": lambda: self.get_public_notes(current_user),
             "search_notes": lambda: self.search_notes(current_user, kwargs.get("query")),
             "get_note_paginated": lambda: self.get_note_paginated(
                 current_user,
@@ -235,7 +236,7 @@ class NoteManager:
                 kwargs.get("sort_by", "created_at"),
                 kwargs.get("sort_order", "desc"),
             ),
-            "get_explore_notes": lambda: self.get_note_paginated(
+            "get_explore_notes": lambda: self.get_explore_notes(
                 current_user,
                 kwargs.get("page", 1),
                 kwargs.get("page_size", 10),
