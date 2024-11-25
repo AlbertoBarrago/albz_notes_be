@@ -5,12 +5,12 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from app.db.models.users import User
+from app.db.models.user.model import User
 from app.db.mysql import get_db, get_current_user
-from app.schemas.note import (NoteOut, NoteCreate,
-                              NoteDelete, NoteUpdate)
-from app.schemas.pagination import PaginatedResponse
-from app.utils.note.actions import NoteManager
+from app.schemas.base import PaginatedResponse
+from app.schemas.notes.request import (NoteOut, NoteCreate,
+                                       NoteDelete, NoteUpdate)
+from app.services.note.repository import NoteManager
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/token')
 
@@ -41,7 +41,7 @@ def get_explore_notes(
         db: Session = Depends(get_db)
 ):
     """
-    Get paginated notes
+    Get pagination notes
     :param page:
     :param page_size:
     :param sort_order:
@@ -82,7 +82,7 @@ def get_paginated_and_filtered_notes(
         db: Session = Depends(get_db)
 ):
     """
-    Get paginated notes
+    Get pagination notes
     :param page:
     :param page_size:
     :param sort_order:

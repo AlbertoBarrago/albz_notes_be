@@ -1,12 +1,12 @@
 """
 Note Schemas
 """
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
-from app.schemas.user import UserBase
+from app.schemas.user.request import UserBase
 
 
 class NoteBase(BaseModel):

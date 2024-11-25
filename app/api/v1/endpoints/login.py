@@ -4,9 +4,9 @@
 from fastapi import APIRouter, Depends, Form
 from sqlalchemy.orm import Session
 
-from app.schemas.login import TokenRequest, TokenResponse
 from app.db.mysql import get_db
-from app.utils.login.actions import LoginManager
+from app.schemas.auth.request import TokenRequest, TokenResponse
+from app.services.auth.login.repository import LoginManager
 
 router = APIRouter()
 

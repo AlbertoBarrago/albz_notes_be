@@ -7,11 +7,11 @@ from fastapi import HTTPException
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.elements import or_
 
+from app.core.exeptions.auth import AuthErrorHandler
+from app.core.exeptions.note import NoteErrorHandler
 from app.db.models import Note, User
-from app.utils.audit.actions import log_audit_event
-from app.utils.error.auth import AuthErrorHandler
-from app.utils.error.note import NoteErrorHandler
-from app.utils.logger.actions import LoggerService
+from app.services.audit.repository import log_audit_event
+from app.services.logger.repository import LoggerService
 
 logger = LoggerService().logger
 
@@ -76,7 +76,7 @@ class NoteManager:
                                    skip, sort_by,
                                    sort_order):
         """
-        Handling paginated request
+        Handling pagination request
         """
         if search_query := search_query.strip():
             search = f"%{search_query}%"
@@ -93,9 +93,9 @@ class NoteManager:
         total = query.count()
         notes = query.offset(skip).limit(page_size).all()
 
-        log_description = (f"User get paginated notes with search: "
+        log_description = (f"User get pagination notes with search: "
                            f"{search_query}") if search_query \
-            else "User get paginated notes"
+            else "User get pagination notes"
         self._log_action(current_user.user_id, "get_paginated_notes", log_description)
         return self.paginated_response(notes, page, page_size, search_query, total)
 
@@ -129,7 +129,7 @@ class NoteManager:
                            sort_order="desc"
                            ):
         """
-         Get paginated notes for specific user
+         Get pagination notes for specific user
         """
         skip = (page - 1) * page_size
         query = (self.db.query(Note)

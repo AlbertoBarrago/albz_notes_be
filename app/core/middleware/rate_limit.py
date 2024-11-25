@@ -7,9 +7,9 @@ from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from app.core.access_token import decode_access_token
-from app.core.settings import settings
-from app.db.models.rate_limit import RateLimit
+from app.core.config import settings
+from app.core.security import decode_access_token
+from app.db.models.auth.model import RateLimit
 
 
 def _get_identifier(request: Request, ip: str) -> str:
