@@ -1,7 +1,7 @@
 """
 Session actions
 """
-from app.core.exeptions.auth import AuthErrorHandler
+from app.core.exceptions.auth import AuthErrorHandler
 from app.core.security import generate_user_token_and_return_user
 from app.db.models.user.model import User
 from app.services.audit.repository import log_audit_event

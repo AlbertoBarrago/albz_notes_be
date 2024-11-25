@@ -8,7 +8,7 @@ from pydantic.v1 import EmailStr
 from starlette.responses import JSONResponse
 
 from app.core import generate_user_token
-from app.core.exeptions.auth import AuthErrorHandler
+from app.core.exceptions.auth import AuthErrorHandler
 from app.db.models import User
 from app.email.email_service import (EmailService,
                                      EmailSchema)

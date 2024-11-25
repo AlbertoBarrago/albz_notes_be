@@ -7,8 +7,8 @@ from fastapi import HTTPException
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.elements import or_
 
-from app.core.exeptions.auth import AuthErrorHandler
-from app.core.exeptions.note import NoteErrorHandler
+from app.core.exceptions.auth import AuthErrorHandler
+from app.core.exceptions.note import NoteErrorHandler
 from app.db.models import Note, User
 from app.services.audit.repository import log_audit_event
 from app.services.logger.repository import LoggerService
