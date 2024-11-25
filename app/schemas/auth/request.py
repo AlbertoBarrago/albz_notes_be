@@ -3,7 +3,7 @@ Login Schema
 """
 from pydantic import BaseModel
 
-from app.schemas.user import UserOut
+from app.schemas.user.request import UserOut
 
 
 class OauthRequest(BaseModel):

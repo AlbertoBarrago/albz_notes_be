@@ -8,9 +8,9 @@ from pymysql import OperationalError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
-from app.core.settings import settings
+from app.core.config import settings
 from app.db.models.users import User
-from app.services.logger.actions import LoggerService
+from app.services.logger.repository import LoggerService
 
 SQLALCHEMY_DATABASE_URL = (
     f"mysql+pymysql://"

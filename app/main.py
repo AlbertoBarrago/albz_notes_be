@@ -10,7 +10,7 @@ from app.api.v1.endpoints import (
     home_router,
     oauth_router
 )
-from app.core.setup_app import create_app
+from app.core.setup import create_app
 
 app = create_app()
 app.mount("/static", StaticFiles(directory="static"), name="static")

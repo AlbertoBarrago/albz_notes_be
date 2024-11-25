@@ -4,10 +4,10 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 
-from app.schemas.login import TokenResponse, OauthRequest
 from app.db.mysql import get_db
-from app.services.login.actions import LoginManager
-from app.services.oauth.google.actions import get_user_info, add_user_to_db
+from app.schemas.auth.request import TokenResponse, OauthRequest
+from app.services.auth.login.repository import LoginManager
+from app.services.auth.oauth.google.repository import get_user_info, add_user_to_db
 
 router = APIRouter()
 

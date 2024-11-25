@@ -4,10 +4,11 @@
 from typing import List
 
 from fastapi import HTTPException
-from fastapi_mail.errors import ConnectionErrors
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+from fastapi_mail.errors import ConnectionErrors
 from pydantic import EmailStr, BaseModel
-from app.core.settings import settings
+
+from app.core.config import settings
 
 
 class EmailSchema(BaseModel):

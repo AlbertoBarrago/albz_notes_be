@@ -8,14 +8,13 @@ from pydantic.v1 import EmailStr
 from starlette.responses import JSONResponse
 
 from app.core import generate_user_token
+from app.core.exeptions.auth import AuthErrorHandler
 from app.db.models import User
 from app.email.email_service import (EmailService,
                                      EmailSchema)
-from app.schemas.login import TokenRequest
-from app.services.audit.actions import log_audit_event
-from app.services.error.auth import AuthErrorHandler
-from app.services.error.generic import GlobalErrorHandler
-from app.services.logger.actions import LoggerService
+from app.schemas.auth.request import TokenRequest
+from app.services.audit.repository import log_audit_event
+from app.services.logger.repository import LoggerService
 
 logger = LoggerService().logger
 
