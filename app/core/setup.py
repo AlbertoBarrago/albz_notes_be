@@ -4,7 +4,7 @@ Set up the app
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.middleware.middleware import RateLimitMiddleware
+from app.core.middleware.rate_limit import RateLimitMiddleware
 from app.db.mysql import SessionLocal
 
 

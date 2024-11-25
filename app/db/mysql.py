@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
 from app.core.config import settings
-from app.db.models.users import User
+from app.db.models.user.model import User
 from app.services.logger.repository import LoggerService
 
 SQLALCHEMY_DATABASE_URL = (

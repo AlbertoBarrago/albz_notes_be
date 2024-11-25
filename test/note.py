@@ -2,8 +2,8 @@ from datetime import datetime
 from sqlalchemy.orm import sessionmaker
 from app.db.models import Base
 from sqlalchemy import create_engine
-from app.db.models.users import User
-from app.db.models.notes import Note
+from app.db.models.user.model import User
+from app.db.models.notes.model import Note
 
 # Using an in-memory SQLite database for testing
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"

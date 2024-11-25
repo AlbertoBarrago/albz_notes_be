@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from app.db.models.users import User
+from app.db.models.user.model import User
 from app.db.mysql import get_db, get_current_user
 from app.schemas.base import PaginatedResponse
 from app.schemas.notes.request import (NoteOut, NoteCreate,

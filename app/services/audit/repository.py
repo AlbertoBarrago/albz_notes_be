@@ -2,7 +2,7 @@
 Audit services
 """
 
-from app.db.models.audit import Audit
+from app.db.models.audit.model import Audit
 
 
 def log_audit_event(session,
