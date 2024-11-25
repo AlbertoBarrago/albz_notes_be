@@ -4,7 +4,9 @@ Session module
 import mysql
 from mysql.connector import Error
 
+from app.utils.logger.actions import LoggerService
 
+logger = LoggerService().logger
 class DbConnection:
     """
     Db Connector Mysql
@@ -20,7 +22,7 @@ class DbConnection:
         try:
             self.connection = mysql.connector.connect(**self.config)
             if self.connection.is_connected():
-                print("Connected to MySQL database")
+                logger.info("Connected to MySQL database")
         except Error as e:
             print(f"Error connecting to MySQL: {e}")
             self.connection = None
@@ -31,7 +33,7 @@ class DbConnection:
         """
         if self.connection and self.connection.is_connected():
             self.connection.close()
-            print("MySQL connection closed")
+            logger.info("MySQL connection closed")
 
     def fetch_query(self, query, params=None):
         """
@@ -45,7 +47,7 @@ class DbConnection:
                 cursor.execute(query, params)
                 return cursor.fetchall()
             except Error as e:
-                print(f"Error fetching data: {e}")
+                logger.error("Error fetching query %s", e)
                 return None
             finally:
                 cursor.close()
@@ -58,9 +60,9 @@ class DbConnection:
         if self.connection and self.connection.is_connected():
             try:
                 self.connection.commit()
-                print("Transaction committed")
+                logger.info("Transaction committed")
             except Error as e:
-                print(f"Error committing transaction: {e}")
+                logger.error("Error committing transaction %s", e)
 
     def rollback(self):
         """
@@ -69,6 +71,6 @@ class DbConnection:
         if self.connection and self.connection.is_connected():
             try:
                 self.connection.rollback()
-                print("Transaction rolled back")
+                logger.info("Transaction rolled back")
             except Error as e:
-                print(f"Error rolling back transaction: {e}")
+                logger.error("Error rolling back transaction %s", e)

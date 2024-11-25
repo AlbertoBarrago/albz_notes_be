@@ -10,10 +10,12 @@ from sqlalchemy import or_
 
 from app.core.access_token import generate_user_token_and_return_user, decode_access_token
 from app.db.models.users import User
-from app.utils.audit.actions import logger
 from app.email.email_service import EmailService, EmailSchema
+from app.utils.audit.actions import log_audit_event
 from app.utils.error.user import UserErrorHandler
+from app.utils.logger.actions import LoggerService
 
+logger = LoggerService().logger
 
 class UserManager:
     """
@@ -34,7 +36,8 @@ class UserManager:
                 User.email == username)).first()
 
     def _log_action(self, user_id, action, description):
-        logger(self.db, user_id=user_id, action=action, description=description)
+        logger.info("User %s %s %s", user_id, action, description)
+        log_audit_event(self.db, user_id=user_id, action=action, description=description)
 
     @staticmethod
     def _user_to_dict(user):

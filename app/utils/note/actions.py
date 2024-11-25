@@ -8,10 +8,12 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.elements import or_
 
 from app.db.models import Note, User
-from app.utils.audit.actions import logger
+from app.utils.audit.actions import log_audit_event
 from app.utils.error.auth import AuthErrorHandler
 from app.utils.error.note import NoteErrorHandler
+from app.utils.logger.actions import LoggerService
 
+logger = LoggerService().logger
 
 class NoteManager:
     """
@@ -22,7 +24,15 @@ class NoteManager:
         self.db = db
 
     def _log_action(self, user_id: str, action: str, description: str):
-        logger(self.db, user_id=user_id, action=action, description=description)
+        """
+        Log audit event and log to file
+        :param user_id:
+        :param action:
+        :param description:
+        :return: None
+        """
+        logger.info("User %s %s %s", user_id, action, description)
+        log_audit_event(self.db, user_id=user_id, action=action, description=description)
 
     @staticmethod
     def _note_to_dict(note):

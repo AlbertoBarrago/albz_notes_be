@@ -12,9 +12,12 @@ from app.db.models import User
 from app.email.email_service import (EmailService,
                                      EmailSchema)
 from app.schemas.login import TokenRequest
-from app.utils.audit.actions import logger
+from app.utils.audit.actions import log_audit_event
 from app.utils.error.auth import AuthErrorHandler
 from app.utils.error.generic import GlobalErrorHandler
+from app.utils.logger.actions import LoggerService
+
+logger = LoggerService().logger
 
 
 def get_info_from_google(token):
@@ -72,6 +75,9 @@ def get_user_info(db, request):
 
     request = TokenRequest(username=user_from_google['name'])
 
+    log_audit_event(db, user_id=user.user_id, action="login", description="Login from Google")
+    logger.info("User %s login from Google", user.user_id)
+
     return request
 
 
@@ -104,10 +110,11 @@ def add_user_to_db(db, request, background_tasks):
         db.refresh(user)
 
         user_fetched = db.query(User).filter(User.email == user_from_google['email']).first()
-        logger(db,
-               user_id=user_fetched.user_id,
-               action="Google Registered",
-               description="Registered user By Google")
+        log_audit_event(db,
+                        user_id=user_fetched.user_id,
+                        action="Google Registered",
+                        description="Registered user By Google")
+        logger.info("User %s registered", user_fetched.user_id)
 
         token = generate_user_token(user_fetched)
 
