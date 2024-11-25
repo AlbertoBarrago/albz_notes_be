@@ -5,10 +5,10 @@ Audit utils
 from app.db.models.audit import Audit
 
 
-def logger(session,
-           user_id: str = None,
-           action: str = None,
-           description: str = None):
+def log_audit_event(session,
+                    user_id: str = None,
+                    action: str = None,
+                    description: str = None):
     """
     Log Action
     :param session:

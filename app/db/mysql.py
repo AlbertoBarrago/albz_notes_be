@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from app.core.settings import settings
 from app.db.models.users import User
-
+from app.utils.logger.actions import LoggerService
 
 SQLALCHEMY_DATABASE_URL = (
     f"mysql+pymysql://"
@@ -20,10 +20,11 @@ SQLALCHEMY_DATABASE_URL = (
     f"/{settings.MYSQL_DATABASE}"
 )
 
+logger = LoggerService().logger
 try:
     engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
     with engine.connect() as connection:
-        print(f"🚀 Connected with success! to {SQLALCHEMY_DATABASE_URL} ")
+        logger.info("\033[92m🚀 Connected with success! to %s\033[0m", SQLALCHEMY_DATABASE_URL)
 except OperationalError as e:
     raise HTTPException(status_code=500, detail="Errore di connessione al database") \
         from e

@@ -3,8 +3,11 @@ Session actions
 """
 from app.core.access_token import generate_user_token_and_return_user
 from app.db.models.users import User
-from app.utils.audit.actions import logger
+from app.utils.audit.actions import log_audit_event
 from app.utils.error.auth import AuthErrorHandler
+from app.utils.logger.actions import LoggerService
+
+logger = LoggerService().logger
 
 class LoginManager:
     """
@@ -31,7 +34,8 @@ class LoginManager:
         :param action:
         :param description:
         """
-        logger(self.db, user_id=user_id, action=action, description=description)
+        logger.info("User %s %s %s", user_id, action, description)
+        log_audit_event(self.db, user_id=user_id, action=action, description=description)
 
     def login(self, request, oauth=False):
         """
