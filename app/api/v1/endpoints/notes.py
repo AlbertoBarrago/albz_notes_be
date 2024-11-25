@@ -10,7 +10,7 @@ from app.db.mysql import get_db, get_current_user
 from app.schemas.note import (NoteOut, NoteCreate,
                               NoteDelete, NoteUpdate)
 from app.schemas.pagination import PaginatedResponse
-from app.utils.note.actions import NoteManager
+from app.services.note.actions import NoteManager
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/token')
 

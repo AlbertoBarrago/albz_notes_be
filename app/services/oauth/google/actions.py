@@ -12,10 +12,10 @@ from app.db.models import User
 from app.email.email_service import (EmailService,
                                      EmailSchema)
 from app.schemas.login import TokenRequest
-from app.utils.audit.actions import log_audit_event
-from app.utils.error.auth import AuthErrorHandler
-from app.utils.error.generic import GlobalErrorHandler
-from app.utils.logger.actions import LoggerService
+from app.services.audit.actions import log_audit_event
+from app.services.error.auth import AuthErrorHandler
+from app.services.error.generic import GlobalErrorHandler
+from app.services.logger.actions import LoggerService
 
 logger = LoggerService().logger
 

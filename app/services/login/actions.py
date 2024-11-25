@@ -3,9 +3,9 @@ Session actions
 """
 from app.core.access_token import generate_user_token_and_return_user
 from app.db.models.users import User
-from app.utils.audit.actions import log_audit_event
-from app.utils.error.auth import AuthErrorHandler
-from app.utils.logger.actions import LoggerService
+from app.services.audit.actions import log_audit_event
+from app.services.error.auth import AuthErrorHandler
+from app.services.logger.actions import LoggerService
 
 logger = LoggerService().logger
 

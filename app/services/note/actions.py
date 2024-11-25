@@ -8,10 +8,10 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.elements import or_
 
 from app.db.models import Note, User
-from app.utils.audit.actions import log_audit_event
-from app.utils.error.auth import AuthErrorHandler
-from app.utils.error.note import NoteErrorHandler
-from app.utils.logger.actions import LoggerService
+from app.services.audit.actions import log_audit_event
+from app.services.error.auth import AuthErrorHandler
+from app.services.error.note import NoteErrorHandler
+from app.services.logger.actions import LoggerService
 
 logger = LoggerService().logger
 

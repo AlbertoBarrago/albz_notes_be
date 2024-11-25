@@ -9,7 +9,7 @@ from app.db.models import User
 from app.db.mysql import get_db, get_current_user
 from app.schemas.login import TokenResponse
 from app.schemas.user import UserOut, UserRequestAdd, PasswordReset, GoogleResetRequest
-from app.utils.user.actions import UserManager
+from app.services.user.actions import UserManager
 
 router = APIRouter()
 

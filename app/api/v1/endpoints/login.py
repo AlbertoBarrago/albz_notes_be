@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.schemas.login import TokenRequest, TokenResponse
 from app.db.mysql import get_db
-from app.utils.login.actions import LoginManager
+from app.services.login.actions import LoginManager
 
 router = APIRouter()
 
