@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from pydantic.v1 import EmailStr
 from sqlalchemy import or_
 
-from app.core.exeptions.user import UserErrorHandler
+from app.core.exceptions.user import UserErrorHandler
 from app.core.security import generate_user_token_and_return_user, decode_access_token
 from app.db.models.user.model import User
 from app.email.email_service import EmailService, EmailSchema
