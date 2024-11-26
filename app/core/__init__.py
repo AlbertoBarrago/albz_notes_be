@@ -3,6 +3,7 @@ This module contains the core functionality of the application.
 """
 from app.core.middleware import *
 from .config import *
+from .constants.enum import *
 from .security import *
 
 __all__ = [
@@ -10,5 +11,6 @@ __all__ = [
     "create_access_token",
     "decode_access_token",
     "generate_user_token_and_return_user",
-    "generate_user_token"
+    "generate_user_token",
+    "UserRole",
 ]
