@@ -228,7 +228,7 @@ class NoteManager:
                             current_user=None,
                             **kwargs):
         """
-        Perform database actions for notes
+        Perform database actions for note
         :param action: Action to perform
         :param note: Note object
         :param note_id: ID of note
