@@ -15,6 +15,7 @@ from app.services.logger.repository import LoggerService
 
 logger = LoggerService().logger
 
+
 class NoteManager:
     """
     Note manager class
@@ -100,13 +101,13 @@ class NoteManager:
         return self.paginated_response(notes, page, page_size, search_query, total)
 
     def get_explore_notes(self,
-                         current_user,
-                         page=1,
-                         page_size=10,
-                         search_query="",
-                         sort_by="created_at",
-                         sort_order="desc"
-                         ):
+                          current_user,
+                          page=1,
+                          page_size=10,
+                          search_query="",
+                          sort_by="created_at",
+                          sort_order="desc"
+                          ):
         """
          Get public notes for logged user
         """
@@ -145,6 +146,16 @@ class NoteManager:
                                                skip,
                                                sort_by,
                                                sort_order)
+
+    def get_note(self, note_id, current_user):
+        """Get note by ID"""
+        note_obj = (self.db.query(Note)
+                    .filter(Note.id == note_id).first())
+        if not note_obj:
+            NoteErrorHandler.raise_note_not_found()
+        if note_obj.user_id != current_user.user_id:
+            AuthErrorHandler.raise_unauthorized()
+        return self._note_to_dict(note_obj)
 
     def search_notes(self, current_user, query):
         """Search notes by query"""
@@ -255,6 +266,7 @@ class NoteManager:
                 kwargs.get("sort_order", "desc"),
             ),
             "add_note": lambda: self.add_note(note, current_user),
+            "get_note_by_id": lambda: self.get_note(note_id, current_user),
             "update_note": lambda: self.update_note(note_id, note, current_user),
             "delete_note": lambda: self.delete_note(note_id, current_user)
         }
