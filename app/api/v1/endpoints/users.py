@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.db.models import User
 from app.db.mysql import get_db, get_current_user
 from app.schemas.auth.request import TokenResponse
-from app.schemas.user.request import UserRequestAdd, PasswordReset, GoogleResetRequest, UserOut
+from app.schemas.user.request import UserRequestAdd, UserOut
 from app.services.user.repository import UserManager
 
 router = APIRouter()
@@ -37,103 +37,8 @@ async def register_user(user: UserRequestAdd, db: Session = Depends(get_db)):
     :param db:
     :return: UserOut
     """
-    return await UserManager(db).perform_action_user("register_user", user=user)
-
-
-@router.post("/reset/password",
-             responses={
-                 404: {
-                     "description": "User not found",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "detail": "User not found",
-                                 "status_code": 404
-                             }
-                         }
-                     }
-                 },
-                 400: {
-                     "description": "Invalid password",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "detail": "Incorrect current password",
-                                 "status_code": 400
-                             }
-                         }
-                     }
-                 }
-             })
-async def reset_password(password_reset: PasswordReset,
-                         db: Session = Depends(get_db)):
-    """
-    Reset user password
-    :param password_reset:
-    :param db:
-    :return: Success message
-    """
-
-    return await (UserManager(db)
-                  .perform_action_user("reset_password",
-                                       user_username=password_reset.username,
-                                       new_password=password_reset.new_password,
-                                       current_password=password_reset.current_password))
-
-
-@router.post("/reset/google-password",
-             responses={
-                 404: {
-                     "description": "User not found",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "detail": "User not found",
-                                 "status_code": 404
-                             }
-                         }
-                     }
-                 },
-                 400: {
-                     "description": "Invalid password",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "detail": "Incorrect current password",
-                                 "status_code": 400
-                             }
-                         }
-                     }
-                 }
-             })
-async def reset_google_password(
-        google_req: GoogleResetRequest,
-        db: Session = Depends(get_db)
-):
-    """
-    Reset user password
-    :param google_req: Google reset request containing token and new password
-    :param db: Database session
-    :return: Success message
-    """
-    return await UserManager(db).reset_google_password_with_token(
-        token=google_req.token,
-        new_password=google_req.new_password
-    )
-
-
-@router.get("/me", response_model=UserOut)
-async def get_current_user_info(current_user: User = Depends(get_current_user),
-                                db: Session = Depends(get_db)):
-    """
-    Get current user information
-    :param current_user:
-    :param db:
-    :return: UserOut
-    """
-    return await UserManager(db).perform_action_user(
-        "me",
-        current_user=current_user)
+    return await UserManager(db).perform_action_user("register_user",
+                                                     user=user)
 
 
 @router.put("/update",

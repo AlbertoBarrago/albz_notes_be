@@ -17,10 +17,12 @@ from app.services.logger.repository import LoggerService
 
 logger = LoggerService().logger
 
+
 class UserManager:
     """
     User manager class
     """
+
     def __init__(self, db):
         self.db = db
         self.email_service = EmailService()
@@ -115,15 +117,6 @@ class UserManager:
 
         return {"message": "Password reset successfully", "user": self._user_to_dict(user)}
 
-    def get_current_user(self, current_user):
-        """
-        Get current user info
-        :param current_user:
-        :return: User
-        """
-        self._log_action(current_user.user_id, "Get current user info", "Get current user info")
-        return self._user_to_dict(current_user)
-
     def get_user(self, current_user):
         """
         Get user info by id
@@ -194,37 +187,12 @@ class UserManager:
 
         return {"message": "User deleted successfully", "user": user_dict}
 
-    async def perform_action_user(self, action: str, user=None, current_user=None, **kwargs):
-        """
-        Perform an action on a user
-        :param action:
-        :param user:
-        :param current_user:
-        :param kwargs:
-        :return: Success message
-        """
-        actions = {
-            "register_user": lambda: self.register_user(user),
-            "reset_password": lambda: self.reset_password(kwargs.get('user_username'),
-                                                        kwargs.get('current_password'),
-                                                        kwargs.get('new_password')),
-            "reset_google_password": lambda: self.reset_google_password(kwargs.get('user_username'),
-                                                                      kwargs.get('new_password')),
-            "me": lambda: self.get_current_user(current_user),
-            "get_user": lambda: self.get_user(current_user),
-            "get_users": lambda: self.get_users(current_user),
-            "update_user": lambda: self.update_user(current_user, user),
-            "delete_user": lambda: self.delete_user(current_user)
-        }
-
-        return await actions[action]() if action == "register_user" else actions[action]()
-
     async def reset_google_password_with_token(self, token: str, new_password: str):
         """
         Reset password using Google token
         :param token: JWT token
         :param new_password: New password to set
-        :return: Success message with user info
+        :return: a Success message with user info
         """
         try:
             payload = decode_access_token(token)
@@ -240,3 +208,41 @@ class UserManager:
                 status_code=400,
                 detail=f"Could not validate token, {e}"
             ) from e
+
+    def generate_user_token_and_return_user(self, current_user):
+        """
+        Generate user token and return user with refreshed token
+        :param current_user: Current user object
+        :return: User with new access token
+        """
+        user = self._get_user(user_id=current_user.user_id)
+        if not user:
+            UserErrorHandler.raise_user_not_found()
+
+        self._log_action(current_user.user_id, "Refresh token", "Refresh token")
+
+        return generate_user_token_and_return_user(user)
+
+    async def perform_action_user(self, action: str, user=None, current_user=None, **kwargs):
+        """
+        Perform an action on a user
+        :param action:
+        :param user:
+        :param current_user:
+        :param kwargs:
+        :return: Success message
+        """
+        actions = {
+            "register_user": lambda: self.register_user(user),
+            "reset_password": lambda: self.reset_password(kwargs.get('user_username'),
+                                                          kwargs.get('current_password'),
+                                                          kwargs.get('new_password')),
+            "reset_google_password": lambda: self.reset_google_password(kwargs.get('user_username'),
+                                                                        kwargs.get('new_password')),
+            "get_user": lambda: self.get_user(current_user),
+            "get_users": lambda: self.get_users(current_user),
+            "update_user": lambda: self.update_user(current_user, user),
+            "delete_user": lambda: self.delete_user(current_user)
+        }
+
+        return await actions[action]() if action == "register_user" else actions[action]()

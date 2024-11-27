@@ -6,13 +6,15 @@ from sqlalchemy.orm import Session
 
 from app.db.mysql import get_db
 from app.schemas.auth.request import TokenResponse, OauthRequest
+from app.schemas.user.request import GoogleResetRequest
 from app.services.auth.login.repository import LoginManager
 from app.services.auth.oauth.google.repository import get_user_info, add_user_to_db
+from app.services.user.repository import UserManager
 
 router = APIRouter()
 
 
-@router.post("/login/google",
+@router.post("/oauth/login/google",
              response_model=TokenResponse,
              responses={
                  401: {
@@ -59,7 +61,7 @@ def login_google(request: OauthRequest,
                                oauth=True)
 
 
-@router.post("/register/google",
+@router.post("/oauth/register/google",
              response_model=TokenResponse,
              responses={
                  400: {
@@ -116,3 +118,44 @@ def register_from_google(request: OauthRequest,
     :return: Token
     """
     return add_user_to_db(db, request, background_tasks)
+
+
+@router.post("/oauth/reset/google-password",
+             responses={
+                 404: {
+                     "description": "User not found",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "detail": "User not found",
+                                 "status_code": 404
+                             }
+                         }
+                     }
+                 },
+                 400: {
+                     "description": "Invalid password",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "detail": "Incorrect current password",
+                                 "status_code": 400
+                             }
+                         }
+                     }
+                 }
+             })
+async def reset_google_password(
+        google_req: GoogleResetRequest,
+        db: Session = Depends(get_db)
+):
+    """
+    Reset user password
+    :param google_req: Google reset request containing a token and new password
+    :param db: Database session
+    :return: Success message
+    """
+    return await UserManager(db).reset_google_password_with_token(
+        token=google_req.token,
+        new_password=google_req.new_password
+    )

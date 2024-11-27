@@ -4,14 +4,17 @@
 from fastapi import APIRouter, Depends, Form
 from sqlalchemy.orm import Session
 
-from app.db.mysql import get_db
+from app.db.models import User
+from app.db.mysql import get_db, get_current_user
 from app.schemas.auth.request import TokenRequest, TokenResponse
+from app.schemas.user.request import PasswordReset
 from app.services.auth.login.repository import LoginManager
+from app.services.user.repository import UserManager
 
 router = APIRouter()
 
 
-@router.post("/login",
+@router.post("/auth/login",
              response_model=TokenResponse,
              responses={
                  404: {
@@ -56,7 +59,7 @@ def login(
     return LoginManager(db).perform_action_auth("login", request)
 
 
-@router.post("/swagger",
+@router.post("/auth/swagger",
              response_model=TokenResponse,
              responses={
                  401: {
@@ -95,3 +98,52 @@ def swagger_login(
         grant_type=grant_type,
         username=username,
         password=password)
+
+
+@router.post("/auth/refresh-token", response_model=TokenResponse)
+async def refresh_token(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Refresh access token
+    """
+    return UserManager(db).generate_user_token_and_return_user(current_user)
+
+
+@router.post("/auth/reset/password",
+             responses={
+                 404: {
+                     "description": "User not found",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "detail": "User not found",
+                                 "status_code": 404
+                             }
+                         }
+                     }
+                 },
+                 400: {
+                     "description": "Invalid password",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "detail": "Incorrect current password",
+                                 "status_code": 400
+                             }
+                         }
+                     }
+                 }
+             })
+async def reset_password(password_reset: PasswordReset,
+                         db: Session = Depends(get_db)):
+    """
+    Reset user password
+    :param password_reset:
+    :param db:
+    :return: Success message
+    """
+
+    return await (UserManager(db)
+                  .perform_action_user("reset_password",
+                                       user_username=password_reset.username,
+                                       new_password=password_reset.new_password,
+                                       current_password=password_reset.current_password))
