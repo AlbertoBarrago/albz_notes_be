@@ -37,7 +37,7 @@ class NoteManager:
 
     @staticmethod
     def _note_to_dict(note):
-        """Convert Note object to dictionary"""
+        """Convert a Note object to dictionary"""
         return {
             "id": note.id,
             "title": note.title,
@@ -112,7 +112,8 @@ class NoteManager:
          Get public notes for logged user
         """
         skip = (page - 1) * page_size
-        query = self.db.query(Note).join(User, Note.user_id == User.user_id, isouter=True)
+        query = self.db.query(Note).join(User, Note.user_id == User.user_id, isouter=True).filter(
+            Note.is_public == True)
 
         return self.handling_paginated_request(current_user,
                                                page,
