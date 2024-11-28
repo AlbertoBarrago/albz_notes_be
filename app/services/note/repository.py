@@ -153,7 +153,7 @@ class NoteManager:
                     .filter(Note.id == note_id).first())
         if not note_obj:
             NoteErrorHandler.raise_note_not_found()
-        if note_obj.user_id != current_user.user_id:
+        if not note_obj.is_public and note_obj.user_id != current_user.user_id:
             AuthErrorHandler.raise_unauthorized()
         return self._note_to_dict(note_obj)
 
