@@ -43,7 +43,7 @@ class NoteManager:
             "title": note.title,
             "content": note.content,
             "is_public": note.is_public,
-            "tags": note.tags,
+            "tags": note.tags if note.tags else [],
             "image_url": note.image_url,
             "created_at": note.created_at.isoformat(),
             "updated_at": note.updated_at.isoformat(),
@@ -88,7 +88,9 @@ class NoteManager:
                 or_(
                     Note.title.ilike(search),
                     Note.content.ilike(search),
-                    User.username.ilike(search)
+                    Note.tags.contains(search),
+                    User.username.ilike(search),
+                    User.email.ilike(search)
                 )
             )
         sort_column = getattr(Note, sort_by)
