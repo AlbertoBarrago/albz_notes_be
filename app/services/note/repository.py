@@ -88,7 +88,9 @@ class NoteManager:
                 or_(
                     Note.title.ilike(search),
                     Note.content.ilike(search),
-                    User.username.ilike(search)
+                    Note.tags.contains(search),
+                    User.username.ilike(search),
+                    User.email.ilike(search)
                 )
             )
         sort_column = getattr(Note, sort_by)
