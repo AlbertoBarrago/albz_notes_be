@@ -42,6 +42,9 @@ class NoteManager:
             "id": note.id,
             "title": note.title,
             "content": note.content,
+            "is_public": note.is_public,
+            "tags": note.tags,
+            "image_url": note.image_url,
             "created_at": note.created_at.isoformat(),
             "updated_at": note.updated_at.isoformat(),
             "user": note.user
@@ -181,6 +184,9 @@ class NoteManager:
             new_note = Note(
                 title=note.title,
                 content=note.content,
+                is_public=note.is_public,
+                tags=note.tags,
+                image_url=note.image_url,
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
                 user_id=current_user.user_id
@@ -206,10 +212,18 @@ class NoteManager:
         if note_obj.user_id != current_user.user_id:
             AuthErrorHandler.raise_unauthorized()
 
-        if note.title:
-            note_obj.title = note.title
-        if note.content:
-            note_obj.content = note.content
+        update_fields = {
+            'title': note.title,
+            'content': note.content,
+            'is_public': note.is_public,
+            'image_url': note.image_url,
+            'tags': note.tags
+        }
+
+        for field, value in update_fields.items():
+            if value is not None:
+                setattr(note_obj, field, value)
+
         note_obj.updated_at = datetime.now()
 
         self._log_action(current_user.user_id, "update_note", "User update note successfully")
