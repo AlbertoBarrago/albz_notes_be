@@ -102,17 +102,6 @@ def get_paginated_and_filtered_notes(
 @router.get("/{note_id}",
             response_model=NoteOut,
             responses={
-                404: {
-                    "description": "Note not found",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "Note not found",
-                                "status_code": 404
-                            }
-                        }
-                    }
-                },
                 401: {
                     "description": "Not authenticated",
                     "content": {
@@ -123,7 +112,18 @@ def get_paginated_and_filtered_notes(
                             }
                         }
                     }
-                }
+                },
+                500: {
+                    "description": "Note not found",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "detail": "Note not found",
+                                "status_code": 500
+                            }
+                        }
+                    }
+                },
             })
 def get_note(note_id: int,
              db: Session = Depends(get_db),
@@ -186,17 +186,6 @@ def add_note(note: NoteCreate,
 @router.put("/{note_id}",
             response_model=NoteOut,
             responses={
-                404: {
-                    "description": "Note not found",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "Note not found",
-                                "status_code": 404
-                            }
-                        }
-                    }
-                },
                 401: {
                     "description": "Not authenticated",
                     "content": {
@@ -207,7 +196,18 @@ def add_note(note: NoteCreate,
                             }
                         }
                     }
-                }
+                },
+                500: {
+                    "description": "Note not found",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "detail": "Note not found",
+                                "status_code": 500
+                            }
+                        }
+                    }
+                },
             })
 def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
                 current_user: User = Depends(get_current_user)):
@@ -240,17 +240,17 @@ def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
                            }
                        }
                    },
-                   404: {
+                   500: {
                        "description": "Note not found",
                        "content": {
                            "application/json": {
                                "example": {
                                    "detail": "Note not found",
-                                   "status_code": 404
+                                   "status_code": 500
                                }
                            }
                        }
-                   }
+                   },
                })
 def delete_note(note_id: int,
                 db: Session = Depends(get_db),

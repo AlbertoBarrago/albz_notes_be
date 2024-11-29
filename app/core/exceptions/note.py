@@ -14,7 +14,7 @@ class NoteErrorHandler:
         Raise note not found error
         """
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Note not found"
         )
 
