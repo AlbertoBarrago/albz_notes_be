@@ -108,7 +108,7 @@ async def refresh_token(current_user: User = Depends(get_current_user), db: Sess
     return UserManager(db).generate_user_token_and_return_user(current_user)
 
 
-@router.post("/auth/reset/password",
+@router.post("/auth/reset",
              responses={
                  404: {
                      "description": "User not found",

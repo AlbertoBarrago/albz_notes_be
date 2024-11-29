@@ -29,7 +29,7 @@ class UserManager:
 
     def _get_user(self, user_id=None, username=None):
         """
-        Get user from database
+        Get user from a database
         """
         if user_id:
             return self.db.query(User).filter(User.user_id == user_id).first()
@@ -44,7 +44,7 @@ class UserManager:
     @staticmethod
     def _user_to_dict(user):
         """
-        Convert user object to dictionary
+        Convert a user object to dictionary
         """
         return {
             "user_id": user.user_id,
@@ -124,8 +124,6 @@ class UserManager:
         :return: User
         """
         user = self._get_user(user_id=current_user.user_id)
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
 
         self._log_action(current_user.user_id, "Get user info", "Get user info")
         return self._user_to_dict(user)
@@ -137,11 +135,11 @@ class UserManager:
         :return: User
         """
         users = self.db.query(User).all()
-        if not users:
-            UserErrorHandler.raise_user_not_found()
+        if current_user.role != "ADMIN":
+            UserErrorHandler.raise_unauthorized_user_action()
 
         self._log_action(current_user.user_id, "Get users", "Get users")
-        return {"users": [self._user_to_dict(user) for user in users]}
+        return [self._user_to_dict(user) for user in users]
 
     def update_user(self, current_user, user_data):
         """
@@ -151,8 +149,7 @@ class UserManager:
         :return: User
         """
         user = self._get_user(user_id=current_user.user_id)
-        if not user:
-            UserErrorHandler.raise_user_not_found()
+
         if user.user_id != current_user.user_id:
             UserErrorHandler.raise_unauthorized_user_action()
 
@@ -175,12 +172,12 @@ class UserManager:
         :return: User
         """
         user = self._get_user(user_id=current_user.user_id)
-        if not user:
-            UserErrorHandler.raise_user_not_found()
+
         if user.user_id != current_user.user_id:
             UserErrorHandler.raise_unauthorized_user_action()
 
-        self._log_action(current_user.user_id, "Delete", "Deleted user account")
+        self._log_action(current_user.user_id, "Delete",
+                         "Deleted his user account where username is {}".format(user.username))
         user_dict = self._user_to_dict(user)
         self.db.delete(user)
         self.db.commit()
