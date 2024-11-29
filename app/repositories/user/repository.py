@@ -12,8 +12,8 @@ from app.core.exceptions.user import UserErrorHandler
 from app.core.security import generate_user_token_and_return_user, decode_access_token
 from app.db.models.user.model import User
 from app.email.email_service import EmailService, EmailSchema
-from app.services.audit.repository import log_audit_event
-from app.services.logger.repository import LoggerService
+from app.repositories.audit.repository import log_audit_event
+from app.repositories.logger.repository import LoggerService
 
 logger = LoggerService().logger
 

@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 from app.db.mysql import get_db
 from app.schemas.auth.request import TokenResponse, OauthRequest
 from app.schemas.user.request import GoogleResetRequest
-from app.services.auth.login.repository import LoginManager
-from app.services.auth.oauth.google.repository import get_user_info, add_user_to_db
-from app.services.user.repository import UserManager
+from app.repositories.auth.login.repository import LoginManager
+from app.repositories.auth.oauth.google.repository import get_user_info, add_user_to_db
+from app.repositories.user.repository import UserManager
 
 router = APIRouter()
 

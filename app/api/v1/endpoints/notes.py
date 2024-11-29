@@ -7,10 +7,11 @@ from sqlalchemy.orm import Session
 
 from app.db.models.user.model import User
 from app.db.mysql import get_db, get_current_user
+from app.repositories.note.cache.repository import CacheRepository
+from app.repositories.note.repository import NoteManager
 from app.schemas.base import PaginatedResponse
 from app.schemas.notes.request import (NoteOut, NoteCreate,
                                        NoteDelete, NoteUpdate)
-from app.services.note.repository import NoteManager
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/token')
 
@@ -91,12 +92,14 @@ def get_paginated_and_filtered_notes(
     :param db:
     :return:
     """
-    return NoteManager(db).perform_note_action("get_note_paginated",
-                                               current_user=current_user,
-                                               page=page,
-                                               sort_order=sort_order,
-                                               query=query,
-                                               page_size=page_size)
+    cache_repo = CacheRepository(db)
+    return cache_repo.get_note_paginated(current_user=current_user,
+                                         page=page,
+                                         search_query=query,
+                                         page_size=page_size,
+                                         sort_by="created_at",
+                                         sort_order=sort_order,
+                                         )
 
 
 @router.get("/{note_id}",

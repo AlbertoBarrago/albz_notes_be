@@ -8,8 +8,8 @@ from app.db.models import User
 from app.db.mysql import get_db, get_current_user
 from app.schemas.auth.request import TokenRequest, TokenResponse
 from app.schemas.user.request import PasswordReset
-from app.services.auth.login.repository import LoginManager
-from app.services.user.repository import UserManager
+from app.repositories.auth.login.repository import LoginManager
+from app.repositories.user.repository import UserManager
 
 router = APIRouter()
 
