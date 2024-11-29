@@ -10,7 +10,7 @@ from app.db.models import User
 from app.db.mysql import get_db, get_current_user
 from app.schemas.auth.request import TokenResponse
 from app.schemas.user.request import UserRequestAdd, UserOut
-from app.services.user.repository import UserManager
+from app.repositories.user.repository import UserManager
 
 router = APIRouter()
 

@@ -29,5 +29,10 @@ class Settings(BaseSettings):
     MAIL_SERVER: str = os.getenv("MAIL_SERVER")
     MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME")
     FRONTEND_URL: str = os.getenv("FRONTEND_URL")
+    CACHE_CONFIG = {
+        "MAXSIZE": 128,
+        "TTL": 300  # 5 minutes in seconds
+    }
+
 
 settings = Settings()

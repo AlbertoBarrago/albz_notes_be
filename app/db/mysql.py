@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from app.core.config import settings
 from app.db.models.user.model import User
-from app.services.logger.repository import LoggerService
+from app.repositories.logger.repository import LoggerService
 
 SQLALCHEMY_DATABASE_URL = (
     f"mysql+pymysql://"

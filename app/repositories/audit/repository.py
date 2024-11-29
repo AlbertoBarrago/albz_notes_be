@@ -1,5 +1,5 @@
 """
-Audit services
+Audit repositories
 """
 
 from app.db.models.audit.model import Audit

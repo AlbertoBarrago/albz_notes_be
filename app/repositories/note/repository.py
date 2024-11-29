@@ -10,8 +10,8 @@ from sqlalchemy.sql.elements import or_
 from app.core.exceptions.auth import AuthErrorHandler
 from app.core.exceptions.note import NoteErrorHandler
 from app.db.models import Note, User
-from app.services.audit.repository import log_audit_event
-from app.services.logger.repository import LoggerService
+from app.repositories.audit.repository import log_audit_event
+from app.repositories.logger.repository import LoggerService
 
 logger = LoggerService().logger
 

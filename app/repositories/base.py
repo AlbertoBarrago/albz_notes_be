@@ -4,7 +4,7 @@ Session module
 import mysql
 from mysql.connector import Error
 
-from app.services.logger.repository import LoggerService
+from app.repositories.logger.repository import LoggerService
 
 logger = LoggerService().logger
 class DbConnection:

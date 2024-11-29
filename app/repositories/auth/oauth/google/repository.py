@@ -13,8 +13,8 @@ from app.db.models import User
 from app.email.email_service import (EmailService,
                                      EmailSchema)
 from app.schemas.auth.request import TokenRequest
-from app.services.audit.repository import log_audit_event
-from app.services.logger.repository import LoggerService
+from app.repositories.audit.repository import log_audit_event
+from app.repositories.logger.repository import LoggerService
 
 logger = LoggerService().logger
 
