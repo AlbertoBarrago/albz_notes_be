@@ -17,22 +17,22 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl='api/v1/token')
 router = APIRouter()
 
 
-@router.get("/list/explore",
+@router.get("/list/public",
             response_model=PaginatedResponse[NoteOut],
             responses={
-                404: {
-                    "description": "Notes not found",
+                401: {
+                    "description": "Not authenticated",
                     "content": {
                         "application/json": {
                             "example": {
-                                "detail": "Notes not found",
-                                "status_code": 404
+                                "detail": "Not authenticated",
+                                "status_code": 401
                             }
                         }
                     }
                 }
             })
-def get_explore_notes(
+def get_public_notes(
         page: int = Query(default=1, gt=0),
         page_size: int = Query(default=10, gt=0, le=100),
         sort_order: str = Query(default="asc", regex="^(asc|desc)$"),
@@ -58,16 +58,16 @@ def get_explore_notes(
                                                page_size=page_size)
 
 
-@router.get("/list/paginated",
+@router.get("/list/private",
             response_model=PaginatedResponse[NoteOut],
             responses={
-                404: {
-                    "description": "Notes not found",
+                401: {
+                    "description": "Not authenticated",
                     "content": {
                         "application/json": {
                             "example": {
-                                "detail": "Notes not found",
-                                "status_code": 404
+                                "detail": "Not authenticated",
+                                "status_code": 401
                             }
                         }
                     }
@@ -113,13 +113,13 @@ def get_paginated_and_filtered_notes(
                         }
                     }
                 },
-                403: {
-                    "description": "Not authorized",
+                401: {
+                    "description": "Not authenticated",
                     "content": {
                         "application/json": {
                             "example": {
-                                "detail": "Not authorized to update this note",
-                                "status_code": 403
+                                "detail": "Not authenticated",
+                                "status_code": 401
                             }
                         }
                     }
@@ -141,59 +141,16 @@ def get_note(note_id: int,
                                                current_user=current_user)
 
 
-@router.put("/{note_id}",
-            response_model=NoteOut,
-            responses={
-                404: {
-                    "description": "Note not found",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "Note not found",
-                                "status_code": 404
-                            }
-                        }
-                    }
-                },
-                403: {
-                    "description": "Permission denied",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "You do not have permission to update this note",
-                                "status_code": 403
-                            }
-                        }
-                    }
-                }
-            })
-def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
-                current_user: User = Depends(get_current_user)):
-    """
-    Update a note
-    :param note_id:
-    :param note:
-    :param db:
-    :param current_user:
-    :return: NoteOut
-    """
-
-    return NoteManager(db).perform_note_action('update_note',
-                                               note,
-                                               note_id=note_id,
-                                               current_user=current_user)
-
-
 @router.post("/",
              response_model=NoteOut,
              responses={
-                 403: {
-                     "description": "Permission denied",
+                 401: {
+                     "description": "Not authenticated",
                      "content": {
                          "application/json": {
                              "example": {
-                                 "detail": "You do not have permission to create a note",
-                                 "status_code": 403
+                                 "detail": "Not authenticated",
+                                 "status_code": 401
                              }
                          }
                      }
@@ -226,16 +183,59 @@ def add_note(note: NoteCreate,
                                                current_user=current_user)
 
 
+@router.put("/{note_id}",
+            response_model=NoteOut,
+            responses={
+                404: {
+                    "description": "Note not found",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "detail": "Note not found",
+                                "status_code": 404
+                            }
+                        }
+                    }
+                },
+                401: {
+                    "description": "Not authenticated",
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "detail": "Not authenticated",
+                                "status_code": 401
+                            }
+                        }
+                    }
+                }
+            })
+def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
+                current_user: User = Depends(get_current_user)):
+    """
+    Update a note
+    :param note_id:
+    :param note:
+    :param db:
+    :param current_user:
+    :return: NoteOut
+    """
+
+    return NoteManager(db).perform_note_action('update_note',
+                                               note,
+                                               note_id=note_id,
+                                               current_user=current_user)
+
+
 @router.delete("/{note_id}",
                response_model=NoteDelete,
                responses={
-                   403: {
-                       "description": "Permission denied",
+                   401: {
+                       "description": "Not authenticated",
                        "content": {
                            "application/json": {
                                "example": {
-                                   "detail": "You do not have permission to delete this note",
-                                   "status_code": 403
+                                   "detail": "Not authenticated",
+                                   "status_code": 401
                                }
                            }
                        }

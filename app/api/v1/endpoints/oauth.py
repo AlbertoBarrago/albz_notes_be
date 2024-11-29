@@ -14,7 +14,7 @@ from app.services.user.repository import UserManager
 router = APIRouter()
 
 
-@router.post("/oauth/login/google",
+@router.post("/oauth/login",
              response_model=TokenResponse,
              responses={
                  401: {
@@ -61,7 +61,7 @@ def login_google(request: OauthRequest,
                                oauth=True)
 
 
-@router.post("/oauth/register/google",
+@router.post("/oauth/register",
              response_model=TokenResponse,
              responses={
                  400: {
@@ -120,7 +120,7 @@ def register_from_google(request: OauthRequest,
     return add_user_to_db(db, request, background_tasks)
 
 
-@router.post("/oauth/reset/google-password",
+@router.post("/oauth/reset",
              responses={
                  404: {
                      "description": "User not found",

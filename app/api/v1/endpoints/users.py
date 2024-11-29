@@ -1,6 +1,7 @@
 """
    User Endpoints
 """
+from typing import List
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -14,7 +15,54 @@ from app.services.user.repository import UserManager
 router = APIRouter()
 
 
-@router.post("/register",
+@router.get("/", response_model=UserOut, responses={
+    401: {
+        "description": "Not authenticated",
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Not authenticated",
+                }
+            }
+        }
+    }
+})
+def get_user(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Get current user
+    :param current_user:
+    :param db:
+    :return: User
+    """
+    return UserManager(db).perform_action_user('get_user', current_user)
+
+
+@router.get("/list", response_model=List[UserOut], responses={
+    401: {
+        "description": "Not authenticated",
+        "content": {
+            "application/json": {
+                "example": {
+                    "detail": "Not authenticated",
+                }
+            }
+        }
+    }
+})
+def get_users_list(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Get current user
+    :param current_user:
+    :param db:
+    :return: User
+    """
+    return UserManager(db).perform_action_user(
+        "get_users_list",
+        current_user=current_user
+    )
+
+
+@router.post("/",
              response_model=TokenResponse,
              responses={
                  400: {
@@ -27,9 +75,18 @@ router = APIRouter()
                              }
                          }
                      }
+                 },
+                 401: {
+                     "description": "Not authenticated",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "detail": "Not authenticated",
+                             }
+                         }
+                     }
                  }
-             }
-             )
+             })
 async def register_user(user: UserRequestAdd, db: Session = Depends(get_db)):
     """
     Register user
@@ -41,27 +98,16 @@ async def register_user(user: UserRequestAdd, db: Session = Depends(get_db)):
                                                      user=user)
 
 
-@router.put("/update",
+@router.put("/",
             response_model=UserOut,
             responses={
-                404: {
-                    "description": "User not found",
+                401: {
+                    "description": "Not authenticated",
                     "content": {
                         "application/json": {
                             "example": {
-                                "detail": "User not found",
-                                "status_code": 404
-                            }
-                        }
-                    }
-                },
-                403: {
-                    "description": "Not authorized",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "Not authorized to update this user",
-                                "status_code": 403
+                                "detail": "Not authenticated",
+                                "status_code": 401
                             }
                         }
                     }
@@ -82,26 +128,15 @@ async def update_user(user_update: UserRequestAdd,
                                                      current_user=current_user)
 
 
-@router.delete("/delete",
+@router.delete("/",
                responses={
-                   404: {
-                       "description": "User not found",
+                   401: {
+                       "description": "Not authenticated",
                        "content": {
                            "application/json": {
                                "example": {
-                                   "detail": "User not found",
-                                   "status_code": 404
-                               }
-                           }
-                       }
-                   },
-                   403: {
-                       "description": "Not authorized",
-                       "content": {
-                           "application/json": {
-                               "example": {
-                                   "detail": "Not authorized to delete this user",
-                                   "status_code": 403
+                                   "detail": "Not authenticated",
+                                   "status_code": 401
                                }
                            }
                        }
