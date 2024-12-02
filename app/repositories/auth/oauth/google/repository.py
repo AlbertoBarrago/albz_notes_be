@@ -9,12 +9,13 @@ from starlette.responses import JSONResponse
 
 from app.core import generate_user_token
 from app.core.exceptions.auth import AuthErrorHandler
+from app.core.exceptions.generic import GlobalErrorHandler
 from app.db.models import User
 from app.email.email_service import (EmailService,
                                      EmailSchema)
-from app.schemas.auth.request import TokenRequest
 from app.repositories.audit.repository import log_audit_event
 from app.repositories.logger.repository import LoggerService
+from app.schemas.auth.request import TokenRequest
 
 logger = LoggerService().logger
 

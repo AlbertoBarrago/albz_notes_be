@@ -20,3 +20,14 @@ class GlobalErrorHandler:
             detail="Failed to send welcome email, but user was registered successfully",
             headers={"X-Error-Type": "email_failure"}
         )
+
+    @classmethod
+    def raise_mail_reset_not_sent(cls: Exception):
+        """
+        Raise mail reset not sent error
+        """
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send password reset email for reset password",
+            headers={"X-Error-Type": "email_failure"}
+        )

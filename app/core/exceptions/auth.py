@@ -67,7 +67,7 @@ class AuthErrorHandler:
         Raise user not found error
         """
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="User not found, Try to register",
             headers={"WWW-Authenticate": "Bearer"}
         )

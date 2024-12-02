@@ -1,15 +1,16 @@
 """
     Auth Endpoint
 """
-from fastapi import APIRouter, Depends, Form
+from fastapi import APIRouter, Depends, Form, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.db.models import User
 from app.db.mysql import get_db, get_current_user
-from app.schemas.auth.request import TokenRequest, TokenResponse
-from app.schemas.user.request import PasswordReset
 from app.repositories.auth.login.repository import LoginManager
+from app.repositories.auth.reset.repository import ResetManager
 from app.repositories.user.repository import UserManager
+from app.schemas.auth.request import TokenRequest, TokenResponse, ResetRequest
+from app.schemas.user.request import ResetPswRequest
 
 router = APIRouter()
 
@@ -17,7 +18,7 @@ router = APIRouter()
 @router.post("/auth/login",
              response_model=TokenResponse,
              responses={
-                 404: {
+                 500: {
                      "description": "User not found",
                      "content": {
                          "application/json": {
@@ -105,12 +106,14 @@ async def refresh_token(current_user: User = Depends(get_current_user), db: Sess
     """
     Refresh access token
     """
-    return UserManager(db).generate_user_token_and_return_user(current_user)
+    return UserManager(db).perform_action_user(
+        "generate_user_token_and_return_user",
+        current_user)
 
 
 @router.post("/auth/reset",
              responses={
-                 404: {
+                 500: {
                      "description": "User not found",
                      "content": {
                          "application/json": {
@@ -133,17 +136,36 @@ async def refresh_token(current_user: User = Depends(get_current_user), db: Sess
                      }
                  }
              })
-async def reset_password(password_reset: PasswordReset,
-                         db: Session = Depends(get_db)):
+async def reset_password(
+        psw_req: ResetPswRequest,
+        db: Session = Depends(get_db)
+):
     """
     Reset user password
-    :param password_reset:
-    :param db:
+    :param psw_req: Google reset request containing a token and new password
+    :param db: Database session
     :return: Success message
     """
+    return await UserManager(db).perform_action_user(
+        "reset_password",
+        token=psw_req.token,
+        new_password=psw_req.new_password
+    )
 
-    return await (UserManager(db)
-                  .perform_action_user("reset_password",
-                                       user_username=password_reset.username,
-                                       new_password=password_reset.new_password,
-                                       current_password=password_reset.current_password))
+
+@router.post("/auth/send-reset-email",
+             response_model=TokenResponse,
+             responses={})
+def send_reset_email(
+        request: ResetRequest,
+        background_tasks: BackgroundTasks,
+        db: Session = Depends(get_db)
+):
+    """
+    Send it reset a password email
+    :return: Success message
+    """
+    return ResetManager(db).send_password_reset_email(
+        username=request.username,
+        background_tasks=background_tasks,
+    )
