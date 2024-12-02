@@ -82,24 +82,7 @@ class UserManager:
 
         return generate_user_token_and_return_user(user_fetched)
 
-    def reset_password(self, user_username, current_password, new_password):
-        """
-        Reset user password
-        """
-        user = self._get_user(username=user_username)
-        if not user:
-            UserErrorHandler.raise_user_not_found()
-        if not user.verify_password(current_password):
-            UserErrorHandler.raise_password_not_match()
-
-        user.set_password(new_password)
-        user.updated_at = datetime.now()
-        self._log_action(user.user_id, "Reset Password", "Password reset successfully")
-        self.db.commit()
-
-        return {"message": "Password reset successfully", "user": self._user_to_dict(user)}
-
-    def reset_google_password(self, user_username, new_password):
+    def reset_password(self, user_username, new_password):
         """
         Reset user password from Google
         :param user_username:
@@ -184,7 +167,7 @@ class UserManager:
 
         return {"message": "User deleted successfully", "user": user_dict}
 
-    async def reset_google_password_with_token(self, token: str, new_password: str):
+    def reset_password_with_token(self, token: str, new_password: str):
         """
         Reset password using Google token
         :param token: JWT token
@@ -196,10 +179,11 @@ class UserManager:
             if not payload:
                 raise HTTPException(status_code=400, detail="Invalid or expired token")
 
-            return self.reset_google_password(
+            return self.reset_password(
                 user_username=payload,
                 new_password=new_password
             )
+
         except jwt.exceptions.PyJWTError as e:
             raise HTTPException(
                 status_code=400,
@@ -231,15 +215,14 @@ class UserManager:
         """
         actions = {
             "register_user": lambda: self.register_user(user),
-            "reset_password": lambda: self.reset_password(kwargs.get('user_username'),
-                                                          kwargs.get('current_password'),
-                                                          kwargs.get('new_password')),
-            "reset_google_password": lambda: self.reset_google_password(kwargs.get('user_username'),
-                                                                        kwargs.get('new_password')),
+            "reset_password": lambda: self.reset_password_with_token(
+                kwargs.get('user_username'),
+                kwargs.get('new_password')),
             "get_user": lambda: self.get_user(current_user),
             "get_users": lambda: self.get_users(current_user),
             "update_user": lambda: self.update_user(current_user, user),
-            "delete_user": lambda: self.delete_user(current_user)
+            "delete_user": lambda: self.delete_user(current_user),
+            "generate_user_token_and_return_user": lambda: self.generate_user_token_and_return_user(current_user)
         }
 
         return await actions[action]() if action == "register_user" else actions[action]()

@@ -30,7 +30,8 @@ class PasswordReset(BaseModel):
     current_password: str
     new_password: str
 
-class GoogleResetRequest(BaseModel):
+
+class ResetPswRequest(BaseModel):
     """
     Google Email Request Model
     """
