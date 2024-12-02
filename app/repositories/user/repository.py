@@ -216,7 +216,7 @@ class UserManager:
         actions = {
             "register_user": lambda: self.register_user(user),
             "reset_password": lambda: self.reset_password_with_token(
-                kwargs.get('user_username'),
+                kwargs.get('token'),
                 kwargs.get('new_password')),
             "get_user": lambda: self.get_user(current_user),
             "get_users": lambda: self.get_users(current_user),
