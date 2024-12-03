@@ -2,9 +2,9 @@
 This module contains the core functionality of the application.
 """
 from app.core.middleware import *
-from .config import *
 from .constants.enum import *
 from .security import *
+from .settings import *
 
 __all__ = [
     "settings",

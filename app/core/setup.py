@@ -29,7 +29,7 @@ def create_app() -> FastAPI:
 
     origins = [
         "http://localhost:5173",
-        "https://albertobarrago.github.io",
+        "albertobarragogithubio-production.up.railway.app",
     ]
 
     app.add_middleware(
