@@ -37,3 +37,4 @@ class ResetRequest(BaseModel):
     Reset Request Model
     """
     username: str
+    token: str

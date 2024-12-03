@@ -167,5 +167,6 @@ def send_reset_email(
     """
     return ResetManager(db).send_password_reset_email(
         username=request.username,
+        token=request.token,
         background_tasks=background_tasks,
     )

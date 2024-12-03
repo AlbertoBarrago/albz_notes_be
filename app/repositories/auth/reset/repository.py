@@ -1,6 +1,5 @@
 from pydantic.v1 import EmailStr
 
-from app.core import generate_user_token
 from app.core.exceptions.auth import AuthErrorHandler
 from app.core.exceptions.generic import GlobalErrorHandler
 from app.db.models import User
@@ -40,7 +39,7 @@ class ResetManager:
         logger.info("User %s %s %s", user_id, action, description)
         log_audit_event(self.db, user_id=user_id, action=action, description=description)
 
-    def send_password_reset_email(self, username, background_tasks):
+    def send_password_reset_email(self, token, username, background_tasks):
         """
         Send password reset email
         :param username:
@@ -51,8 +50,6 @@ class ResetManager:
         if not user:
             AuthErrorHandler.raise_user_not_found()
             return
-
-        token = generate_user_token(user)
 
         log_audit_event(self.db,
                         user_id=user.user_id,
@@ -68,7 +65,7 @@ class ResetManager:
             background_tasks.add_task(
                 email_service.send_password_setup_email,
                 email_schema,
-                user.user_id
+                token
             )
 
             result = {
