@@ -8,7 +8,7 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from fastapi_mail.errors import ConnectionErrors
 from pydantic import EmailStr, BaseModel
 
-from app.core.config import settings
+from app.core.settings import settings
 
 
 class EmailSchema(BaseModel):
@@ -64,7 +64,7 @@ class EmailService:
                     </p>
 
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="{settings.FRONTEND_URL}/notes"
+                        <a href="{settings.FRONTEND_URL}notes"
                         style="background-color: #007bff;
                         color: white;
                         padding: 12px 25px;
@@ -116,7 +116,7 @@ class EmailService:
                    </p>
 
                    <div style="text-align: center; margin: 30px 0;">
-                       <a href="{settings.FRONTEND_URL}/reset/password?token={token}"
+                       <a href="{settings.FRONTEND_URL}reset/password?token={token}"
                           style="background-color: #28a745;
                           color: white; padding: 12px 25px;
                           text-decoration: none;
