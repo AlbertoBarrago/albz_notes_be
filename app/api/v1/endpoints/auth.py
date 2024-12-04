@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 from app.db.models import User
 from app.db.mysql import get_db, get_current_user
 from app.repositories.auth.login.repository import LoginManager
-from app.repositories.auth.reset.repository import ResetManager
+from app.repositories.auth.reset.repository import PasswordManager
 from app.repositories.user.repository import UserManager
-from app.schemas.auth.request import TokenRequest, TokenResponse, ResetRequest
+from app.schemas.auth.request import TokenRequest, TokenResponse, ResetRequest, ResetUserEmail
 from app.schemas.user.request import ResetPswRequest
 
 router = APIRouter()
@@ -165,8 +165,17 @@ def send_reset_email(
     Send it reset a password email
     :return: Success message
     """
-    return ResetManager(db).send_password_reset_email(
+    return PasswordManager(db).send_password_reset_email(
         username=request.username,
         token=request.token,
         background_tasks=background_tasks,
     )
+
+
+@router.post("/auth/password-reset/request")
+async def request_password_reset(
+        request: ResetUserEmail,
+        background_tasks: BackgroundTasks,
+        db: Session = Depends(get_db)
+):
+    return PasswordManager(db).initiate_password_reset(request.email, background_tasks)

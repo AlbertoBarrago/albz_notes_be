@@ -9,22 +9,23 @@ from app.repositories.logger.repository import LoggerService
 
 logger = LoggerService().logger
 
+
 class LoginManager:
     """
     Session manager
     """
+
     def __init__(self, db):
         self.db = db
 
-    def _get_user(self, username):
+    def _get_user(self, request):
         """
         Get user from database
-        :param username:
+        :param request:
         :return: User object
         """
         return (self.db.query(User)
-                .filter((User.username == username) |
-                        (User.email == username))
+                .filter((User.username == request.username if not request.email else User.email == request.email))
                 .first())
 
     def _log_action(self, user_id, action, description):
@@ -44,7 +45,7 @@ class LoginManager:
         :param oauth:
         :return: TokenResponse object
         """
-        user = self._get_user(request.username)
+        user = self._get_user(request)
 
         if not user:
             AuthErrorHandler.raise_user_not_found()
