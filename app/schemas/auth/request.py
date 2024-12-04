@@ -21,8 +21,7 @@ class TokenRequest(BaseModel):
     Token Request Model
     """
     username: str
-    email: str = None
-    password: str = None
+    password: str
 
 class TokenResponse(BaseModel):
     """
