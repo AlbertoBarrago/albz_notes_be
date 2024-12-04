@@ -12,8 +12,6 @@ class OauthRequest(BaseModel):
     """
     clientId: str
     credential: str
-    username: str = None
-    email: str = None
 
 
 class TokenRequest(BaseModel):
@@ -21,7 +19,7 @@ class TokenRequest(BaseModel):
     Token Request Model
     """
     username: str
-    password: str
+    password: str = None
 
 class TokenResponse(BaseModel):
     """
