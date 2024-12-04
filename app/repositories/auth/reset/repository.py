@@ -1,5 +1,9 @@
+from datetime import timedelta
+
+from fastapi import BackgroundTasks
 from pydantic.v1 import EmailStr
 
+from app.core import create_access_token
 from app.core.exceptions.auth import AuthErrorHandler
 from app.core.exceptions.generic import GlobalErrorHandler
 from app.db.models import User
@@ -10,7 +14,7 @@ from app.repositories.logger.repository import LoggerService
 logger = LoggerService().logger
 
 
-class ResetManager:
+class PasswordManager:
     """
     Session manager
     """
@@ -42,6 +46,7 @@ class ResetManager:
     def send_password_reset_email(self, token, username, background_tasks):
         """
         Send password reset email
+        :param token:
         :param username:
         :param background_tasks:
         :return:
@@ -76,6 +81,36 @@ class ResetManager:
             }
 
             return result
+
+        except (ConnectionError, TimeoutError):
+            GlobalErrorHandler.raise_mail_reset_not_sent()
+
+    def initiate_password_reset(self, email: str, background_tasks: BackgroundTasks):
+        user = self.db.query(User).filter(User.email == email).first()
+
+        if not user:
+            return {"message": "If the email exists, a password reset link has been sent"}
+
+        reset_token = create_access_token(
+            data={"sub": user.username, "purpose": "password_reset"},
+            expires_delta=timedelta(minutes=15)
+        )
+
+        try:
+            email_service = EmailService()
+            email_schema = EmailSchema(
+                username=user.username,
+                email=[EmailStr(user.email)]
+            )
+
+            background_tasks.add_task(
+                email_service.send_password_setup_email,
+                email_schema,
+                reset_token
+            )
+
+            self._log_action(user.user_id, action="Password Reset", description="Password reset initiated")
+            return {"message": "Password reset instructions have been sent to your email"}
 
         except (ConnectionError, TimeoutError):
             GlobalErrorHandler.raise_mail_reset_not_sent()
