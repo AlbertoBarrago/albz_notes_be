@@ -22,6 +22,14 @@ class NoteBase(BaseModel):
     image_url: Optional[str] = Field(default=None)
 
 
+class NoteOut(NoteBase):
+    """
+    NoteOut Model
+    """
+    id: int
+    user: UserBase
+
+
 class NoteCreate(NoteBase):
     """
     NoteCreate Model
@@ -38,14 +46,6 @@ class NoteUpdate(BaseModel):
     is_public: Optional[bool] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
     image_url: Optional[str] = Field(default=None)
-
-
-class NoteOut(NoteBase):
-    """
-    NoteOut Model
-    """
-    id: int
-    user: UserBase
 
 
 class NoteDelete(BaseModel):

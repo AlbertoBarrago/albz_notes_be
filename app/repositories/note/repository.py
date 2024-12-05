@@ -10,6 +10,7 @@ from sqlalchemy.sql.elements import or_
 from app.core.exceptions.auth import AuthErrorHandler
 from app.core.exceptions.note import NoteErrorHandler
 from app.db.models import Note, User
+from app.dto.note.noteDTO import NoteDTO
 from app.repositories.audit.repository import log_audit_event
 from app.repositories.logger.repository import LoggerService
 
@@ -32,44 +33,12 @@ class NoteManager:
         :param description:
         :return: None
         """
-        logger.info("User %s %s %s", user_id, action, description)
-        log_audit_event(self.db, user_id=user_id, action=action, description=description)
-
-    @staticmethod
-    def _note_to_dict(note):
-        """Convert a Note object to dictionary"""
-        return {
-            "id": note.id,
-            "title": note.title,
-            "content": note.content,
-            "is_public": note.is_public,
-            "tags": note.tags if note.tags else [],
-            "image_url": note.image_url,
-            "created_at": note.created_at.isoformat(),
-            "updated_at": note.updated_at.isoformat(),
-            "user": note.user
-        }
-
-    def paginated_response(self, notes, page, page_size, search_query, total):
-        """
-        Paginated response
-        :param notes:
-        :param page:
-        :param page_size:
-        :param search_query:
-        :param total:
-        :return: Paginated response
-        """
-        return {
-            "items": [self._note_to_dict(note) for note in notes],
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": (total + page_size - 1) // page_size,
-            "has_next": page < ((total + page_size - 1) // page_size),
-            "has_prev": page > 1,
-            "search_query": search_query
-        }
+        try:
+            logger.info("User %s %s %s", user_id, action, description)
+            log_audit_event(self.db, user_id=user_id, action=action, description=description)
+        except Exception as e:
+            logger.error(f"Error logging action: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error logging action")
 
     def handling_paginated_request(self,
                                    current_user,
@@ -82,28 +51,42 @@ class NoteManager:
         """
         Handling pagination request
         """
-        if search_query := search_query.strip():
-            search = f"%{search_query}%"
-            query = query.filter(
-                or_(
-                    Note.title.ilike(search),
-                    Note.content.ilike(search),
-                    Note.tags.contains(search),
-                    User.username.ilike(search),
-                    User.email.ilike(search)
+        try:
+            if search_query := search_query.strip():
+                search = f"%{search_query}%"
+                query = query.filter(
+                    or_(
+                        Note.title.ilike(search),
+                        Note.content.ilike(search),
+                        Note.tags.contains(search),
+                        User.username.ilike(search),
+                        User.email.ilike(search)
+                    )
                 )
+            sort_column = getattr(Note, sort_by)
+            query = query.order_by(sort_column.desc() if sort_order == "desc" else sort_column.asc())
+
+            total = query.count()
+            notes = query.offset(skip).limit(page_size).all()
+
+            log_description = (f"User get pagination notes with search: "
+                               f"{search_query}") if search_query \
+                else "User get pagination notes"
+            self._log_action(current_user.user_id, "get_paginated_notes", log_description)
+
+            return NoteDTO.paginated_response(
+                notes,
+                page,
+                page_size,
+                search_query,
+                total,
+                sort_by,
+                sort_order
             )
-        sort_column = getattr(Note, sort_by)
-        query = query.order_by(sort_column.desc() if sort_order == "desc" else sort_column.asc())
-
-        total = query.count()
-        notes = query.offset(skip).limit(page_size).all()
-
-        log_description = (f"User get pagination notes with search: "
-                           f"{search_query}") if search_query \
-            else "User get pagination notes"
-        self._log_action(current_user.user_id, "get_paginated_notes", log_description)
-        return self.paginated_response(notes, page, page_size, search_query, total)
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error handling paginated request: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error processing pagination request")
 
     def get_explore_notes(self,
                           current_user,
@@ -116,17 +99,22 @@ class NoteManager:
         """
          Get public notes for logged user
         """
-        skip = (page - 1) * page_size
-        query = self.db.query(Note).join(User, Note.user_id == User.user_id, isouter=True).filter(
-            Note.is_public == True)
+        try:
+            skip = (page - 1) * page_size
+            query = self.db.query(Note).join(User, Note.user_id == User.user_id, isouter=True).filter(
+                Note.is_public == True)
 
-        return self.handling_paginated_request(current_user,
-                                               page,
-                                               page_size,
-                                               query,
-                                               search_query,
-                                               skip, sort_by,
-                                               sort_order)
+            return self.handling_paginated_request(current_user,
+                                                   page,
+                                                   page_size,
+                                                   query,
+                                                   search_query,
+                                                   skip, sort_by,
+                                                   sort_order)
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error getting explore notes: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error retrieving explore notes")
 
     def get_note_paginated(self, current_user,
                            page=1,
@@ -138,45 +126,63 @@ class NoteManager:
         """
          Get pagination notes for specific user
         """
-        skip = (page - 1) * page_size
-        query = (self.db.query(Note)
-                 .join(User)
-                 .options(joinedload(Note.user))
-                 .filter(Note.user_id == current_user.user_id))
+        try:
+            skip = (page - 1) * page_size
+            query = (self.db.query(Note)
+                     .join(User)
+                     .options(joinedload(Note.user))
+                     .filter(Note.user_id == current_user.user_id))
 
-        return self.handling_paginated_request(current_user,
-                                               page,
-                                               page_size,
-                                               query,
-                                               search_query,
-                                               skip,
-                                               sort_by,
-                                               sort_order)
+            return self.handling_paginated_request(current_user,
+                                                   page,
+                                                   page_size,
+                                                   query,
+                                                   search_query,
+                                                   skip,
+                                                   sort_by,
+                                                   sort_order)
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error getting paginated notes: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error retrieving paginated notes")
 
     def get_note(self, note_id, current_user):
         """Get note by ID"""
-        note_obj = (self.db.query(Note)
-                    .filter(Note.id == note_id).first())
-        if not note_obj.is_public and note_obj.user_id != current_user.user_id:
-            AuthErrorHandler.raise_unauthorized()
-        return self._note_to_dict(note_obj)
+        try:
+            note_obj = (self.db.query(Note)
+                        .filter(Note.id == note_id).first())
+            if not note_obj:
+                NoteErrorHandler.raise_note_not_found()
+            if not note_obj.is_public and note_obj.user_id != current_user.user_id:
+                AuthErrorHandler.raise_unauthorized()
+            return NoteDTO.from_model(note_obj)
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error getting note: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error retrieving note")
 
     def search_notes(self, current_user, query):
         """Search notes by query"""
-        base_query = self.db.query(Note).join(User).filter(Note.user_id == current_user.user_id)
+        try:
+            base_query = self.db.query(Note).join(User).filter(Note.user_id == current_user.user_id)
 
-        if query:
-            search = f"%{query}%"
-            base_query = base_query.filter(
-                or_(
-                    Note.title.ilike(search),
-                    Note.content.ilike(search),
-                    User.username.ilike(search)
+            if query:
+                search = f"%{query}%"
+                base_query = base_query.filter(
+                    or_(
+                        Note.title.ilike(search),
+                        Note.content.ilike(search),
+                        User.username.ilike(search)
+                    )
                 )
-            )
 
-        self._log_action(current_user.user_id, "search_notes", "User searched notes successfully")
-        return base_query.all()
+            self._log_action(current_user.user_id, "search_notes", "User searched notes successfully")
+            notes = base_query.all()
+            return [NoteDTO.from_model(note) for note in notes]
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error searching notes: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error searching notes")
 
     def add_note(self, note, current_user):
         """Add new note"""
@@ -197,56 +203,66 @@ class NoteManager:
             self.db.commit()
             self.db.refresh(new_note)
 
-            return self._note_to_dict(new_note)
-        except HTTPException as e:
+            return NoteDTO.from_model(new_note)
+        except Exception as e:
             self.db.rollback()
-            NoteErrorHandler.raise_note_creation_error(e)
-            return None
+            logger.error(f"Error adding note: {str(e)}")
+            NoteErrorHandler.raise_note_creation_error(str(e))
 
     def update_note(self, note_id, note, current_user):
         """Update existing note"""
-        note_obj = (self.db.query(Note)
-                    .filter(Note.id == note_id).first())
-        if not note_obj:
-            NoteErrorHandler.raise_note_not_found()
-        if note_obj.user_id != current_user.user_id:
-            AuthErrorHandler.raise_unauthorized()
+        try:
+            note_obj = (self.db.query(Note)
+                        .filter(Note.id == note_id).first())
+            if not note_obj:
+                NoteErrorHandler.raise_note_not_found()
+            if note_obj.user_id != current_user.user_id:
+                AuthErrorHandler.raise_unauthorized()
 
-        update_fields = {
-            'title': note.title,
-            'content': note.content,
-            'is_public': note.is_public,
-            'image_url': note.image_url,
-            'tags': note.tags
-        }
+            update_fields = {
+                'title': note.title,
+                'content': note.content,
+                'is_public': note.is_public,
+                'image_url': note.image_url,
+                'tags': note.tags
+            }
 
-        for field, value in update_fields.items():
-            if value is not None:
-                setattr(note_obj, field, value)
+            for field, value in update_fields.items():
+                if value is not None:
+                    setattr(note_obj, field, value)
 
-        note_obj.updated_at = datetime.now()
+            note_obj.updated_at = datetime.now()
 
-        self._log_action(current_user.user_id, "update_note", "User update note successfully")
-        self.db.commit()
-        self.db.refresh(note_obj)
-        return self._note_to_dict(note_obj)
+            self._log_action(current_user.user_id, "update_note", "User update note successfully")
+            self.db.commit()
+            self.db.refresh(note_obj)
+            return NoteDTO.from_model(note_obj)
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error updating note: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error updating note")
 
     def delete_note(self, note_id, current_user):
         """Delete note"""
-        note_obj = (self.db.query(Note)
-                    .filter(Note.id == note_id).first())
-        if not note_obj:
-            NoteErrorHandler.raise_note_not_found()
-        if note_obj.user_id != current_user.user_id:
-            AuthErrorHandler.raise_unauthorized()
+        try:
+            note_obj = (self.db.query(Note)
+                        .filter(Note.id == note_id).first())
+            if not note_obj:
+                NoteErrorHandler.raise_note_not_found()
+            if note_obj.user_id != current_user.user_id:
+                AuthErrorHandler.raise_unauthorized()
 
-        self._log_action(current_user.user_id,
-                         "delete_note",
-                         "User delete note successfully")
-        self.db.delete(note_obj)
-        self.db.commit()
-        return {"result": f"Note {note_id} has been deleted",
-                "id_note": note_id}
+            self._log_action(current_user.user_id,
+                             "delete_note",
+                             "User delete note successfully")
+            self.db.delete(note_obj)
+            self.db.commit()
+            return {"result": f"Note {note_id} has been deleted",
+                    "id_note": note_id}
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error deleting note: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error deleting note")
 
     def perform_note_action(self, action: str,
                             note=None,
@@ -262,27 +278,32 @@ class NoteManager:
         :param kwargs: Additional arguments
         :return: Note or response object
         """
-        actions = {
-            "search_notes": lambda: self.search_notes(current_user, kwargs.get("query")),
-            "get_note_paginated": lambda: self.get_note_paginated(
-                current_user,
-                kwargs.get("page", 1),
-                kwargs.get("page_size", 10),
-                kwargs.get("query", ""),
-                kwargs.get("sort_by", "created_at"),
-                kwargs.get("sort_order", "desc"),
-            ),
-            "get_explore_notes": lambda: self.get_explore_notes(
-                current_user,
-                kwargs.get("page", 1),
-                kwargs.get("page_size", 10),
-                kwargs.get("query", ""),
-                kwargs.get("sort_by", "created_at"),
-                kwargs.get("sort_order", "desc"),
-            ),
-            "add_note": lambda: self.add_note(note, current_user),
-            "get_note_by_id": lambda: self.get_note(note_id, current_user),
-            "update_note": lambda: self.update_note(note_id, note, current_user),
-            "delete_note": lambda: self.delete_note(note_id, current_user)
-        }
-        return actions[action]()
+        try:
+            actions = {
+                "search_notes": lambda: self.search_notes(current_user, kwargs.get("query")),
+                "get_note_paginated": lambda: self.get_note_paginated(
+                    current_user,
+                    kwargs.get("page", 1),
+                    kwargs.get("page_size", 10),
+                    kwargs.get("query", ""),
+                    kwargs.get("sort_by", "created_at"),
+                    kwargs.get("sort_order", "desc"),
+                ),
+                "get_explore_notes": lambda: self.get_explore_notes(
+                    current_user,
+                    kwargs.get("page", 1),
+                    kwargs.get("page_size", 10),
+                    kwargs.get("query", ""),
+                    kwargs.get("sort_by", "created_at"),
+                    kwargs.get("sort_order", "desc"),
+                ),
+                "add_note": lambda: self.add_note(note, current_user),
+                "get_note_by_id": lambda: self.get_note(note_id, current_user),
+                "update_note": lambda: self.update_note(note_id, note, current_user),
+                "delete_note": lambda: self.delete_note(note_id, current_user)
+            }
+            return actions[action]()
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error performing note action: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error performing note action")
