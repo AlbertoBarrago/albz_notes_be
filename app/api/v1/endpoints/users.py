@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.db.models import User
 from app.db.mysql import get_db, get_current_user
-from app.schemas.auth.request import TokenResponse
-from app.schemas.user.request import UserRequestAdd, UserOut
 from app.repositories.user.repository import UserManager
+from app.schemas.auth.request import TokenResponse
+from app.schemas.user.request import UserOut, UserBase, UserRequestAdd, UserResponse
 
 router = APIRouter()
 
@@ -99,7 +99,7 @@ async def register_user(user: UserRequestAdd, db: Session = Depends(get_db)):
 
 
 @router.put("/",
-            response_model=UserOut,
+            response_model=UserResponse,
             responses={
                 401: {
                     "description": "Not authenticated",
@@ -113,7 +113,7 @@ async def register_user(user: UserRequestAdd, db: Session = Depends(get_db)):
                     }
                 }
             })
-async def update_user(user_update: UserRequestAdd,
+async def update_user(user_update: UserBase,
                       db: Session = Depends(get_db),
                       current_user: User = Depends(get_current_user), ):
     """

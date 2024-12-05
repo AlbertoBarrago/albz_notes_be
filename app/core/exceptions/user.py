@@ -57,3 +57,13 @@ class UserErrorHandler:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Passwords do not match"
         )
+
+    @classmethod
+    def raise_server_error(cls, error_message: str):
+        """
+        Raise server error
+        """
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_message or "Server error"
+        )

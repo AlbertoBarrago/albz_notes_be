@@ -102,7 +102,8 @@ def swagger_login(
 
 
 @router.post("/auth/refresh-token", response_model=TokenResponse)
-async def refresh_token(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def refresh_token(current_user: User = Depends(get_current_user),
+                        db: Session = Depends(get_db)):
     """
     Refresh access token
     """

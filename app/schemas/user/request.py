@@ -47,3 +47,17 @@ class UserOut(UserBase):
     username: str
     email: str
     picture_url: Optional[str] = None
+
+
+class UserResponse(BaseModel):
+    """
+    User Response Model
+    """
+    user_id: str
+    username: str
+    email: str
+    role: str
+    picture_url: Optional[str]
+    created_at: str
+    updated_at: str
+    message: str
