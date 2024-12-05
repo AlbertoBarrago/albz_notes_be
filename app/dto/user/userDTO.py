@@ -17,7 +17,7 @@ class UserDTO:
     updated_at: datetime
 
     @staticmethod
-    def from_model(user, message: str = "") -> dict:
+    def from_model(user) -> dict:
         return {
             "user_id": user.user_id,
             "username": user.username,
@@ -26,5 +26,4 @@ class UserDTO:
             "picture_url": user.picture_url or None,
             "created_at": user.created_at.isoformat(),
             "updated_at": user.updated_at.isoformat(),
-            "message": message
         }

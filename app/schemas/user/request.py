@@ -15,6 +15,16 @@ class UserBase(BaseModel):
     email: str
 
 
+class UserOut(UserBase):
+    """
+    User Out Model
+    """
+    user_id: str
+    username: str
+    email: str
+    picture_url: Optional[str] = None
+
+
 class UserRequestAdd(UserBase):
     """
     User Update Model
@@ -39,25 +49,16 @@ class ResetPswRequest(BaseModel):
     new_password: str
 
 
-class UserOut(UserBase):
-    """
-    User Out Model
-    """
-    user_id: str
-    username: str
-    email: str
-    picture_url: Optional[str] = None
-
-
 class UserResponse(BaseModel):
     """
     User Response Model
     """
-    user_id: str
-    username: str
-    email: str
-    role: str
-    picture_url: Optional[str]
-    created_at: str
-    updated_at: str
+    user: UserOut
+    message: str
+
+
+class UserDelete(BaseModel):
+    """
+    User Delete Model
+    """
     message: str
