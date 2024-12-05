@@ -29,7 +29,7 @@ def create_app() -> FastAPI:
 
     origins = [
         "http://localhost:5173",
-        "https://notezreactapp-production.up.railway.app",
+        "https://notezreactapp-production-61c3.up.railway.app",  # TODO: convert me in env
     ]
 
     app.add_middleware(
