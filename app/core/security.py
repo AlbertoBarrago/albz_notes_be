@@ -48,7 +48,7 @@ def generate_user_token_and_return_user(user):
     """
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username},
+        data={"sub": str(user.user_id)},
         expires_delta=access_token_expires
     )
     return {
@@ -65,6 +65,6 @@ def generate_user_token(user):
     """
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return create_access_token(
-        data={"sub": user.username},
+        data={"sub": str(user.user_id)},
         expires_delta=access_token_expires
     )

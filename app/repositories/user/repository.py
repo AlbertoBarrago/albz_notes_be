@@ -10,7 +10,9 @@ from sqlalchemy import or_
 
 from app.core.exceptions.user import UserErrorHandler
 from app.core.security import generate_user_token_and_return_user, decode_access_token
+from app.db.models import Audit
 from app.db.models.user.model import User
+from app.dto.user.userDTO import UserDTO
 from app.email.email_service import EmailService, EmailSchema
 from app.repositories.audit.repository import log_audit_event
 from app.repositories.logger.repository import LoggerService
@@ -98,7 +100,7 @@ class UserManager:
         self._log_action(user.user_id, "Reset Google Password", "Password reset successfully")
         self.db.commit()
 
-        return {"message": "Password reset successfully", "user": self._user_to_dict(user)}
+        return {"message": "Password reset successfully", "user": UserDTO.from_model(user)}
 
     def get_user(self, current_user):
         """
@@ -109,7 +111,7 @@ class UserManager:
         user = self._get_user(user_id=current_user.user_id)
 
         self._log_action(current_user.user_id, "Get user info", "Get user info")
-        return self._user_to_dict(user)
+        return UserDTO.from_model(user)
 
     def get_users(self, current_user):
         """
@@ -122,7 +124,7 @@ class UserManager:
             UserErrorHandler.raise_unauthorized_user_action()
 
         self._log_action(current_user.user_id, "Get users", "Get users")
-        return [self._user_to_dict(user) for user in users]
+        return [UserDTO.from_model(user) for user in users]
 
     def update_user(self, current_user, user_data):
         """
@@ -146,7 +148,7 @@ class UserManager:
         self.db.commit()
         self.db.refresh(user)
 
-        return {"user": self._user_to_dict(user), "message": "User updated successfully"}
+        return UserDTO.from_model(user, message="User updated successfully")
 
     def delete_user(self, current_user):
         """
@@ -161,9 +163,16 @@ class UserManager:
 
         self._log_action(current_user.user_id, "Delete",
                          "Deleted his user account where username is {}".format(user.username))
-        user_dict = self._user_to_dict(user)
-        self.db.delete(user)
-        self.db.commit()
+        user_dict = UserDTO.from_model(user)
+        try:
+            if user:
+                self.db.query(Audit).filter(Audit.user_id == user.user_id).delete()
+                self.db.delete(user)
+                self.db.commit()
+                return {"message": "User deleted successfully", "user": user_dict}
+        except Exception as e:
+            self.db.rollback()
+            raise UserErrorHandler.raise_server_error(e.args[0])
 
         return {"message": "User deleted successfully", "user": user_dict}
 
