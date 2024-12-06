@@ -15,7 +15,7 @@ class NoteErrorHandler:
         """
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Note not found"
+            detail="Error retrieving note"
         )
 
     @classmethod
@@ -36,4 +36,14 @@ class NoteErrorHandler:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while creating the note: {str(error)}"
+        )
+
+    @classmethod
+    def raise_pagination_error(cls, error):
+        """
+        Raise pagination error
+        """
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while paginating the notes list: {str(error)}"
         )

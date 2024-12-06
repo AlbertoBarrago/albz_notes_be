@@ -8,42 +8,14 @@ from app.db.mysql import get_db
 from app.repositories.auth.login.repository import LoginManager
 from app.repositories.auth.oauth.google.repository import get_user_info, add_user_to_db
 from app.schemas.auth.request import TokenResponse, OauthRequest
+from app.schemas.common.responses import CommonResponses
 
 router = APIRouter()
 
 
 @router.post("/oauth/login",
              response_model=TokenResponse,
-             responses={
-                 401: {
-                     "description": "Incorrect username or password",
-                     "content": {
-                         "application/json": {
-                           "example": {
-                               "status_code": 401,
-                               "detail": "Incorrect username or password",
-                               "headers": {
-                                   "WWW-Authenticate": "Bearer"
-                               }
-                           }
-                         }
-                     }
-                 },
-                 404: {
-                     "description": "User not found",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "status_code": 404,
-                                  "detail": "User not found, Try to register",
-                                 "headers": {
-                                      "WWW-Authenticate": "Bearer"
-                                  }
-                             }
-                         }
-                     }
-                 }
-             })
+             responses={**CommonResponses.BAD_REQUEST, **CommonResponses.UNAUTHORIZED})
 def login_google(request: OauthRequest,
                  db: Session = Depends(get_db)):
     """
@@ -61,50 +33,7 @@ def login_google(request: OauthRequest,
 
 @router.post("/oauth/register",
              response_model=TokenResponse,
-             responses={
-                 400: {
-                     "description": "User already exists",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "status_code": 400,
-                                 "detail": "User already exists, Try to login",
-                                 "headers": {
-                                     "WWW-Authenticate": "Bearer"
-                                 }
-                             }
-                         }
-                     }
-                 },
-                 401: {
-                     "description": "Not authorized",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "status_code": 401,
-                                 "detail": "Not authorized",
-                                 "headers": {
-                                     "WWW-Authenticate": "Bearer"
-                                 }
-                             }
-                         }
-                     }
-                 },
-                 404: {
-                     "description": "User not found",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "status_code": 404,
-                                 "detail": "User not found, Try to register",
-                                 "headers": {
-                                     "WWW-Authenticate": "Bearer"
-                                 }
-                             }
-                         }
-                     }
-                 }
-             })
+             responses={**CommonResponses.BAD_REQUEST, **CommonResponses.UNAUTHORIZED, **CommonResponses.MAIL_NOT_SENT})
 def register_from_google(request: OauthRequest,
                          background_tasks: BackgroundTasks,
                          db: Session = Depends(get_db)):

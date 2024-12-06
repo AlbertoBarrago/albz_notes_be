@@ -86,7 +86,7 @@ class NoteManager:
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error handling paginated request: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error processing pagination request")
+            NoteErrorHandler.raise_pagination_error(e)
 
     def get_explore_notes(self,
                           current_user,
@@ -114,7 +114,7 @@ class NoteManager:
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error getting explore notes: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error retrieving explore notes")
+            NoteErrorHandler.raise_pagination_error(e)
 
     def get_note_paginated(self, current_user,
                            page=1,
@@ -144,7 +144,7 @@ class NoteManager:
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error getting paginated notes: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error retrieving paginated notes")
+            NoteErrorHandler.raise_pagination_error(e)
 
     def get_note(self, note_id, current_user):
         """Get note by ID"""
@@ -159,7 +159,7 @@ class NoteManager:
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error getting note: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error retrieving note")
+            NoteErrorHandler.raise_pagination_error(e)
 
     def search_notes(self, current_user, query):
         """Search notes by query"""
