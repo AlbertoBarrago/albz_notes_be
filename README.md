@@ -4,8 +4,6 @@ A simple notes app with authentication and authorization.
 Rate limiting and audit actions.
 
 ⭐️ Swagger on `/docs`
-![img.png](swagger_screen.png)
-[Webapp: Notes](https://albertobarrago.github.io/)
 
 ## Feature Description
 - Python v3.12

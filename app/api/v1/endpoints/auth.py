@@ -108,10 +108,21 @@ def send_reset_email(
     )
 
 
-@router.post("/auth/password-reset/request")
+@router.post("/auth/password-reset")
 async def request_password_reset(
         request: ResetUserEmail,
         background_tasks: BackgroundTasks,
         db: Session = Depends(get_db)
 ):
+    """
+       Initiate a password reset process for a user
+
+       Args:
+           request (ResetUserEmail): Email request object containing user's email
+           background_tasks (BackgroundTasks): FastAPI background tasks handler
+           db (Session): Database session dependency
+
+       Returns:
+           dict: Response containing status of password reset initiation
+       """
     return PasswordManager(db).initiate_password_reset(request.email, background_tasks)

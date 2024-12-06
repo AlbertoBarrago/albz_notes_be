@@ -4,6 +4,7 @@ Set up the app
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core import settings
 from app.core.middleware.rate_limit import RateLimitMiddleware
 from app.db.mysql import SessionLocal
 
@@ -27,22 +28,19 @@ def create_app() -> FastAPI:
         },
     )
 
-    origins = [
-        "http://localhost:5173",
-        "https://notezreactapp-production-61c3.up.railway.app",  # TODO: convert me in env
-    ]
+    origins = settings.CORS_ORIGINS.split(",")
 
     app.add_middleware(
-        RateLimitMiddleware,
-        db_session=SessionLocal
-    )
-
-    app.add_middleware(
-        CORSMiddleware,
+        CORSMiddleware,  # type: ignore
         allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["Authorization", "Content-Type"],
+    )
+
+    app.add_middleware(
+        RateLimitMiddleware,  # type: ignore
+        db_session=SessionLocal
     )
 
     return app

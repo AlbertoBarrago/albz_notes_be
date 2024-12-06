@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
+from starlette.types import ASGIApp
 
 from app.core.security import decode_access_token
 from app.core.settings import settings
@@ -53,7 +54,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         Rate Limit Middleware
     """
 
-    def __init__(self, app, db_session):
+    def __init__(self, app: ASGIApp, db_session):
         super().__init__(app)
         self.rate_limit = int(settings.RATE_LIMIT)
         self.window = int(settings.RATE_LIMIT_WINDOW)

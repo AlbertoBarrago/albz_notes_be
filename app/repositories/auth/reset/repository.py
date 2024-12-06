@@ -1,3 +1,6 @@
+"""
+ Password manager
+"""
 from datetime import timedelta
 
 from fastapi import BackgroundTasks
@@ -54,7 +57,6 @@ class PasswordManager:
         user = self._get_user(username)
         if not user:
             AuthErrorHandler.raise_user_not_found()
-            return
 
         log_audit_event(self.db,
                         user_id=user.user_id,
@@ -86,6 +88,24 @@ class PasswordManager:
             GlobalErrorHandler.raise_mail_reset_not_sent()
 
     def initiate_password_reset(self, email: str, background_tasks: BackgroundTasks):
+        """
+        Initiates a password reset process by generating a reset token and
+        sending an email to the user if they exist.
+
+        Parameters:
+            email: str
+                The email address of the user requesting a password reset.
+            background_tasks: BackgroundTasks
+                The background task manager to handle sending the email asynchronously.
+
+        Returns:
+            dict: A message indicating whether the reset link has been sent,
+            without revealing if the email exists in the system.
+
+        Raises:
+            ConnectionError: If there is an issue connecting to the email service.
+            TimeoutError: If the connection to the email service times out.
+        """
         user = self.db.query(User).filter(User.email == email).first()
 
         if not user:
@@ -109,7 +129,9 @@ class PasswordManager:
                 reset_token
             )
 
-            self._log_action(user.user_id, action="Password Reset", description="Password reset initiated")
+            self._log_action(user.user_id,
+                             action="Password Reset",
+                             description="Password reset initiated")
             return {"message": "Password reset instructions have been sent to your email"}
 
         except (ConnectionError, TimeoutError):

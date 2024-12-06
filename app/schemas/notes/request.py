@@ -34,7 +34,6 @@ class NoteCreate(NoteBase):
     """
     NoteCreate Model
     """
-    pass
 
 
 class NoteUpdate(BaseModel):

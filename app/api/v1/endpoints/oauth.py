@@ -25,15 +25,17 @@ def login_google(request: OauthRequest,
     :return: Token
     """
 
-    return  LoginManager(db).perform_action_auth(
-                               "login",
-                               get_user_info(db, request),
-                               oauth=True)
+    return LoginManager(db).perform_action_auth(
+        "login",
+        get_user_info(db, request),
+        oauth=True)
 
 
 @router.post("/oauth/register",
              response_model=TokenResponse,
-             responses={**CommonResponses.BAD_REQUEST, **CommonResponses.UNAUTHORIZED, **CommonResponses.MAIL_NOT_SENT})
+             responses={**CommonResponses.BAD_REQUEST,
+                        **CommonResponses.UNAUTHORIZED,
+                        **CommonResponses.MAIL_NOT_SENT})
 def register_from_google(request: OauthRequest,
                          background_tasks: BackgroundTasks,
                          db: Session = Depends(get_db)):
