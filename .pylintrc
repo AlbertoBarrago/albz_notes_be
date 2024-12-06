@@ -7,4 +7,5 @@ disable=R0903,  # Too few public methods
         R0915,  # Too many statements
         R0917,  # Too many statements
         R0902,  # Too many instance attributes
-        C0103   # Invalid constant name
+        C0103,  # Invalid constant name
+        E1120   # No value for argument 'foo' in function call

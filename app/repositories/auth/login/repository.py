@@ -3,8 +3,8 @@ Session actions
 """
 from app.core.exceptions.auth import AuthErrorHandler
 from app.core.security import generate_user_token_and_return_user
-from app.db.models.user.model import User
 from app.repositories.audit.repository import log_audit_event
+from app.repositories.auth.common.services import CommonService
 from app.repositories.logger.repository import LoggerService
 
 logger = LoggerService().logger
@@ -15,17 +15,6 @@ class LoginManager:
     """
     def __init__(self, db):
         self.db = db
-
-    def _get_user(self, username):
-        """
-        Get user from database
-        :param username:
-        :return: User object
-        """
-        return (self.db.query(User)
-                .filter((User.username == username) |
-                        (User.email == username))
-                .first())
 
     def _log_action(self, user_id, action, description):
         """
@@ -44,7 +33,7 @@ class LoginManager:
         :param oauth:
         :return: TokenResponse object
         """
-        user = self._get_user(request.username)
+        user = CommonService(self.db).get_user(request.username)
 
         if not user:
             AuthErrorHandler.raise_user_not_found()
@@ -68,7 +57,7 @@ class LoginManager:
         :param password:
         :return: TokenResponse object
         """
-        user = self._get_user(username)
+        user = CommonService(self.db).get_user(username)
 
         if not user or not user.verify_password(password):
             AuthErrorHandler.raise_invalid_credentials()

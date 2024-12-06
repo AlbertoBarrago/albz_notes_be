@@ -86,6 +86,7 @@ class PasswordManager:
 
         except (ConnectionError, TimeoutError):
             GlobalErrorHandler.raise_mail_reset_not_sent()
+            return None
 
     def initiate_password_reset(self, email: str, background_tasks: BackgroundTasks):
         """
@@ -136,3 +137,4 @@ class PasswordManager:
 
         except (ConnectionError, TimeoutError):
             GlobalErrorHandler.raise_mail_reset_not_sent()
+        return None
