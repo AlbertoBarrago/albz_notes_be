@@ -79,7 +79,7 @@ def get_user_info(db, request):
     return request
 
 
-def add_user_to_db(db, request, background_tasks):
+async def add_user_to_db(db, request, background_tasks):
     """
     Add User to DB and send email
     :param db:
@@ -117,11 +117,12 @@ def add_user_to_db(db, request, background_tasks):
         token = generate_user_token(user_fetched)
 
         try:
-            CommonService.send_email(background_tasks=background_tasks,
+            await CommonService().send_email(background_tasks=background_tasks,
                                      token=token,
                                      user=user)
         except (ConnectionError, TimeoutError):
             GlobalErrorHandler.raise_mail_not_sent()
+            return None
 
         result = {
             "access_token": token,

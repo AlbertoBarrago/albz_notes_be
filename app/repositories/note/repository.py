@@ -113,7 +113,7 @@ class NoteManager:
             query = (self.db.query(Note).join(User,
                                               Note.user_id == User.user_id,
                                               isouter=True)
-                     .filter(Note.is_public == True))
+                     .filter(Note.is_public.is_(True)))
 
             return self.handling_paginated_request(current_user,
                                                    page,
@@ -248,6 +248,7 @@ class NoteManager:
         except IOError as e:
             logger.error("I/O error while adding notes: %s", e)
             NoteErrorHandler.raise_note_creation_error(str(e))
+        return None
 
     def update_note(self, note_id, note, current_user):
         """Update existing note"""
@@ -286,6 +287,7 @@ class NoteManager:
         except IOError as e:
             logger.error("I/O error while adding notes: %s", e)
             NoteErrorHandler.raise_note_update_error(e)
+        return None
 
     def delete_note(self, note_id, current_user):
         """Delete note"""
@@ -306,7 +308,7 @@ class NoteManager:
                     "id_note": note_id}
         except SQLAlchemyError as e:
             self.db.rollback()
-            logger.error(f"Error deleting note: {str(e)}")
+            logger.error("Error deleting note: %s", e)
             NoteErrorHandler.raise_delete_note_error(e)
         except ValueError as e:
             logger.error("Invalid value error while deleting note: %s", e)
@@ -314,6 +316,7 @@ class NoteManager:
         except IOError as e:
             logger.error("I/O error while deleting note: %s", e)
             NoteErrorHandler.raise_delete_note_error(e)
+        return None
 
     def perform_note_action(self, action: str,
                             note=None,
@@ -363,3 +366,4 @@ class NoteManager:
         except IOError as e:
             logger.error("I/O error while select action: %s", e)
             NoteErrorHandler.raise_general_error(e)
+        return None
