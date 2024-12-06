@@ -218,7 +218,7 @@ class UserManager:
                 UserErrorHandler.raise_unauthorized_user_action()
 
             self._log_action(current_user.user_id, "Delete",
-                             "Deleted his user account where username is {}".format(user.username))
+                             f"Deleted his user account where username is {user.username}")
 
             if user:
                 self.db.query(Audit).filter(Audit.user_id == user.user_id).delete()
@@ -229,6 +229,7 @@ class UserManager:
         except Exception as e:
             self.db.rollback()
             raise UserErrorHandler.raise_server_error(e.args[0])
+        return None
 
     async def perform_action_user(self, action: str, user=None, current_user=None, **kwargs):
         """
@@ -249,7 +250,8 @@ class UserManager:
                 "get_users": lambda: self.get_users(current_user),
                 "update_user": lambda: self.update_user(current_user, user),
                 "delete_user": lambda: self.delete_user(current_user),
-                "generate_user_token_and_return_user": lambda: self._generate_user_token_and_return_user(current_user)
+                "generate_user_token_and_return_user": lambda:
+                self._generate_user_token_and_return_user(current_user)
             }
 
             return await actions[action]() if action == "register_user" else actions[action]()

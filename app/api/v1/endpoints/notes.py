@@ -1,7 +1,9 @@
 """
 Note Endpoint
 """
-from fastapi import APIRouter, Depends, Query
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -10,6 +12,8 @@ from app.db.mysql import get_db, get_current_user
 from app.repositories.note.cache.repository import CacheRepository
 from app.repositories.note.repository import NoteManager
 from app.schemas.base import PaginatedResponse
+from app.schemas.common.responses import CommonResponses
+from app.schemas.notes.list.request import NoteQueryParams
 from app.schemas.notes.request import (NoteOut, NoteCreate,
                                        NoteDelete, NoteUpdate)
 
@@ -20,85 +24,49 @@ router = APIRouter()
 
 @router.get("/list/public",
             response_model=PaginatedResponse[NoteOut],
-            responses={
-                401: {
-                    "description": "Not authenticated",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "Not authenticated",
-                                "status_code": 401
-                            }
-                        }
-                    }
-                }
-            })
+            responses={**CommonResponses.UNAUTHORIZED, **CommonResponses.INTERNAL_SERVER_ERROR})
 def get_public_notes(
-        page: int = Query(default=1, gt=0),
-        page_size: int = Query(default=10, gt=0, le=100),
-        sort_order: str = Query(default="asc", regex="^(asc|desc)$"),
-        query: str = Query(default="", max_length=100),
+        params: Annotated[NoteQueryParams, Depends()],
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
     """
     Get pagination notes
-    :param page:
-    :param page_size:
-    :param sort_order:
+    :param params: NoteQueryParams (page, page_size, sort_order, query)
     :param current_user:
-    :param query:
     :param db:
     :return:
     """
     return NoteManager(db).perform_note_action("get_explore_notes",
                                                current_user=current_user,
-                                               page=page,
-                                               sort_order=sort_order,
-                                               query=query,
-                                               page_size=page_size)
+                                               page=params.page,
+                                               sort_order=params.sort_order,
+                                               query=params.query,
+                                               page_size=params.page_size)
 
 
 @router.get("/list/private",
             response_model=PaginatedResponse[NoteOut],
-            responses={
-                401: {
-                    "description": "Not authenticated",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "Not authenticated",
-                                "status_code": 401
-                            }
-                        }
-                    }
-                }
-            })
+            responses={**CommonResponses.UNAUTHORIZED, **CommonResponses.INTERNAL_SERVER_ERROR})
 def get_paginated_and_filtered_notes(
-        page: int = Query(default=1, gt=0),
-        page_size: int = Query(default=10, gt=0, le=100),
-        sort_order: str = Query(default="asc", regex="^(asc|desc)$"),
-        query: str = Query(default="", max_length=100),
+        params: Annotated[NoteQueryParams, Depends()],
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
     """
     Get pagination notes
-    :param page:
-    :param page_size:
-    :param sort_order:
+    :param params: NoteQueryParams (page, page_size, sort_order, query)
     :param current_user:
-    :param query:
     :param db:
     :return:
     """
     cache_repo = CacheRepository(db)
     return cache_repo.get_note_paginated(current_user=current_user,
-                                         page=page,
-                                         search_query=query,
-                                         page_size=page_size,
-                                         sort_by="created_at",
-                                         sort_order=sort_order,
+                                         page=params.page,
+                                         search_query=params.query,
+                                         page_size=params.page_size,
+                                         sort_by=params.sort_by,
+                                         sort_order=params.sort_order,
                                          )
 
 
@@ -146,30 +114,7 @@ def get_note(note_id: int,
 
 @router.post("/",
              response_model=NoteOut,
-             responses={
-                 401: {
-                     "description": "Not authenticated",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "detail": "Not authenticated",
-                                 "status_code": 401
-                             }
-                         }
-                     }
-                 },
-                 500: {
-                     "description": "Note creation failed",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "detail": "An error occurred while creating the note",
-                                 "status_code": 500
-                             }
-                         }
-                     }
-                 }
-             })
+             responses={**CommonResponses.UNAUTHORIZED, **CommonResponses.INTERNAL_SERVER_ERROR})
 def add_note(note: NoteCreate,
              db: Session = Depends(get_db),
              current_user: User = Depends(get_current_user)):
@@ -188,30 +133,7 @@ def add_note(note: NoteCreate,
 
 @router.put("/{note_id}",
             response_model=NoteOut,
-            responses={
-                401: {
-                    "description": "Not authenticated",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "Not authenticated",
-                                "status_code": 401
-                            }
-                        }
-                    }
-                },
-                500: {
-                    "description": "Note not found",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "Note not found",
-                                "status_code": 500
-                            }
-                        }
-                    }
-                },
-            })
+            responses={**CommonResponses.UNAUTHORIZED, **CommonResponses.INTERNAL_SERVER_ERROR})
 def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
                 current_user: User = Depends(get_current_user)):
     """
@@ -231,30 +153,7 @@ def update_note(note_id: int, note: NoteUpdate, db: Session = Depends(get_db),
 
 @router.delete("/{note_id}",
                response_model=NoteDelete,
-               responses={
-                   401: {
-                       "description": "Not authenticated",
-                       "content": {
-                           "application/json": {
-                               "example": {
-                                   "detail": "Not authenticated",
-                                   "status_code": 401
-                               }
-                           }
-                       }
-                   },
-                   500: {
-                       "description": "Note not found",
-                       "content": {
-                           "application/json": {
-                               "example": {
-                                   "detail": "Note not found",
-                                   "status_code": 500
-                               }
-                           }
-                       }
-                   },
-               })
+               responses={**CommonResponses.UNAUTHORIZED, **CommonResponses.INTERNAL_SERVER_ERROR})
 def delete_note(note_id: int,
                 db: Session = Depends(get_db),
                 current_user: User = Depends(get_current_user)):

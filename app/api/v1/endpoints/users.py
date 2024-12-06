@@ -10,23 +10,13 @@ from app.db.models import User
 from app.db.mysql import get_db, get_current_user
 from app.repositories.user.repository import UserManager
 from app.schemas.auth.request import TokenResponse
+from app.schemas.common.responses import CommonResponses
 from app.schemas.user.request import UserOut, UserBase, UserRequestAdd, UserResponse, UserDelete
 
 router = APIRouter()
 
 
-@router.get("/", response_model=UserOut, responses={
-    401: {
-        "description": "Not authenticated",
-        "content": {
-            "application/json": {
-                "example": {
-                    "detail": "Not authenticated",
-                }
-            }
-        }
-    }
-})
+@router.get("/", response_model=UserOut, responses=CommonResponses.UNAUTHORIZED)
 def get_user(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Get current user
@@ -37,18 +27,7 @@ def get_user(current_user: User = Depends(get_current_user), db: Session = Depen
     return UserManager(db).perform_action_user('get_user', current_user)
 
 
-@router.get("/list", response_model=List[UserOut], responses={
-    401: {
-        "description": "Not authenticated",
-        "content": {
-            "application/json": {
-                "example": {
-                    "detail": "Not authenticated",
-                }
-            }
-        }
-    }
-})
+@router.get("/list", response_model=List[UserOut], responses=CommonResponses.UNAUTHORIZED)
 def get_users_list(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Get current user
@@ -64,29 +43,7 @@ def get_users_list(current_user: User = Depends(get_current_user), db: Session =
 
 @router.post("/",
              response_model=TokenResponse,
-             responses={
-                 400: {
-                     "description": "Username already registered",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "status_code": 400,
-                                 "detail": "Username already registered"
-                             }
-                         }
-                     }
-                 },
-                 401: {
-                     "description": "Not authenticated",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "detail": "Not authenticated",
-                             }
-                         }
-                     }
-                 }
-             })
+             responses={**CommonResponses.UNAUTHORIZED, **CommonResponses.INTERNAL_SERVER_ERROR})
 async def register_user(user: UserRequestAdd, db: Session = Depends(get_db)):
     """
     Register user
@@ -100,19 +57,7 @@ async def register_user(user: UserRequestAdd, db: Session = Depends(get_db)):
 
 @router.put("/",
             response_model=UserResponse,
-            responses={
-                401: {
-                    "description": "Not authenticated",
-                    "content": {
-                        "application/json": {
-                            "example": {
-                                "detail": "Not authenticated",
-                                "status_code": 401
-                            }
-                        }
-                    }
-                }
-            })
+            responses=CommonResponses.UNAUTHORIZED)
 async def update_user(user_update: UserBase,
                       db: Session = Depends(get_db),
                       current_user: User = Depends(get_current_user), ):
@@ -130,20 +75,7 @@ async def update_user(user_update: UserBase,
 
 @router.delete("/",
                response_model=UserDelete,
-               responses={
-                   401: {
-                       "description": "Not authenticated",
-                       "content": {
-                           "application/json": {
-                               "example": {
-                                   "detail": "Not authenticated",
-                                   "status_code": 401
-                               }
-                           }
-                       }
-                   }
-               }
-               )
+               responses=CommonResponses.UNAUTHORIZED)
 async def delete_user(db: Session = Depends(get_db),
                       current_user: User = Depends(get_current_user)):
     """

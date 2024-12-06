@@ -1,3 +1,6 @@
+"""
+    Cache decorator for caching data
+"""
 from functools import lru_cache
 from typing import Any
 

@@ -4,16 +4,14 @@
 import secrets
 
 import requests
-from pydantic.v1 import EmailStr
 from starlette.responses import JSONResponse
 
 from app.core import generate_user_token
 from app.core.exceptions.auth import AuthErrorHandler
 from app.core.exceptions.generic import GlobalErrorHandler
 from app.db.models import User
-from app.email.email_service import (EmailService,
-                                     EmailSchema)
 from app.repositories.audit.repository import log_audit_event
+from app.repositories.auth.common.services import CommonService
 from app.repositories.logger.repository import LoggerService
 from app.schemas.auth.request import TokenRequest
 
@@ -119,19 +117,11 @@ def add_user_to_db(db, request, background_tasks):
         token = generate_user_token(user_fetched)
 
         try:
-            email_service = EmailService()
-            email_schema = EmailSchema(
-                username=user.username,
-                email=[EmailStr(user.email)],
-            )
-            background_tasks.add_task(
-                email_service.send_password_setup_email,
-                email_schema,
-                token
-            )
+            CommonService.send_email(background_tasks=background_tasks,
+                                     token=token,
+                                     user=user)
         except (ConnectionError, TimeoutError):
             GlobalErrorHandler.raise_mail_not_sent()
-
 
         result = {
             "access_token": token,

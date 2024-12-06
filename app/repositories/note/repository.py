@@ -3,7 +3,7 @@ Note Action DB
 """
 from datetime import datetime
 
-from fastapi import HTTPException
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.elements import or_
 
@@ -37,8 +37,8 @@ class NoteManager:
             logger.info("User %s %s %s", user_id, action, description)
             log_audit_event(self.db, user_id=user_id, action=action, description=description)
         except Exception as e:
-            logger.error(f"Error logging action: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error logging action")
+            logger.error("Error while logging action: %s", e)
+            raise AuthErrorHandler.raise_unauthorized()
 
     def handling_paginated_request(self,
                                    current_user,
@@ -46,7 +46,8 @@ class NoteManager:
                                    page_size,
                                    query,
                                    search_query,
-                                   skip, sort_by,
+                                   skip,
+                                   sort_by,
                                    sort_order):
         """
         Handling pagination request
@@ -64,7 +65,9 @@ class NoteManager:
                     )
                 )
             sort_column = getattr(Note, sort_by)
-            query = query.order_by(sort_column.desc() if sort_order == "desc" else sort_column.asc())
+            query = query.order_by(sort_column.desc()
+                                   if sort_order == "desc"
+                                   else sort_column.asc())
 
             total = query.count()
             notes = query.offset(skip).limit(page_size).all()
@@ -83,10 +86,16 @@ class NoteManager:
                 sort_by,
                 sort_order
             )
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error handling paginated request: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error processing pagination request")
+        except SQLAlchemyError as e:
+            logger.error("Database error while logging action: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        except ValueError as e:
+            logger.error("Invalid value error while logging action: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        except IOError as e:
+            logger.error("I/O error while logging action: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        return None
 
     def get_explore_notes(self,
                           current_user,
@@ -101,8 +110,10 @@ class NoteManager:
         """
         try:
             skip = (page - 1) * page_size
-            query = self.db.query(Note).join(User, Note.user_id == User.user_id, isouter=True).filter(
-                Note.is_public == True)
+            query = (self.db.query(Note).join(User,
+                                              Note.user_id == User.user_id,
+                                              isouter=True)
+                     .filter(Note.is_public == True))
 
             return self.handling_paginated_request(current_user,
                                                    page,
@@ -111,10 +122,16 @@ class NoteManager:
                                                    search_query,
                                                    skip, sort_by,
                                                    sort_order)
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error getting explore notes: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error retrieving explore notes")
+        except SQLAlchemyError as e:
+            logger.error("Database error while get public note paginated: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        except ValueError as e:
+            logger.error("Invalid value error while public get note paginated: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        except IOError as e:
+            logger.error("I/O error while get note public paginated: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        return None
 
     def get_note_paginated(self, current_user,
                            page=1,
@@ -141,10 +158,16 @@ class NoteManager:
                                                    skip,
                                                    sort_by,
                                                    sort_order)
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error getting paginated notes: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error retrieving paginated notes")
+        except SQLAlchemyError as e:
+            logger.error("Database error while get note paginated: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        except ValueError as e:
+            logger.error("Invalid value error while get note paginated: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        except IOError as e:
+            logger.error("I/O error while get note paginated: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        return None
 
     def get_note(self, note_id, current_user):
         """Get note by ID"""
@@ -156,10 +179,16 @@ class NoteManager:
             if not note_obj.is_public and note_obj.user_id != current_user.user_id:
                 AuthErrorHandler.raise_unauthorized()
             return NoteDTO.from_model(note_obj)
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error getting note: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error retrieving note")
+        except SQLAlchemyError as e:
+            logger.error("Database error while get note: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        except ValueError as e:
+            logger.error("Invalid value error while get note: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        except IOError as e:
+            logger.error("I/O error while get note: %s", e)
+            NoteErrorHandler.raise_pagination_error(e)
+        return None
 
     def search_notes(self, current_user, query):
         """Search notes by query"""
@@ -176,13 +205,21 @@ class NoteManager:
                     )
                 )
 
-            self._log_action(current_user.user_id, "search_notes", "User searched notes successfully")
+            self._log_action(current_user.user_id,
+                             "search_notes",
+                             "User searched notes successfully")
             notes = base_query.all()
             return [NoteDTO.from_model(note) for note in notes]
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error searching notes: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error searching notes")
+        except SQLAlchemyError as e:
+            logger.error("Database error while searching notes action: %s", e)
+            NoteErrorHandler.raise_note_not_found()
+        except ValueError as e:
+            logger.error("Invalid value error while searching notes action: %s", e)
+            NoteErrorHandler.raise_note_not_found()
+        except IOError as e:
+            logger.error("I/O error while searching notes action: %s", e)
+            NoteErrorHandler.raise_note_not_found()
+        return None
 
     def add_note(self, note, current_user):
         """Add new note"""
@@ -204,9 +241,12 @@ class NoteManager:
             self.db.refresh(new_note)
 
             return NoteDTO.from_model(new_note)
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error adding note: {str(e)}")
+        except SQLAlchemyError as e:
+            logger.error("Database error while adding notes: %s", e)
+        except ValueError as e:
+            logger.error("Invalid value error while adding notes: %s", e)
+        except IOError as e:
+            logger.error("I/O error while adding notes: %s", e)
             NoteErrorHandler.raise_note_creation_error(str(e))
 
     def update_note(self, note_id, note, current_user):
@@ -237,10 +277,15 @@ class NoteManager:
             self.db.commit()
             self.db.refresh(note_obj)
             return NoteDTO.from_model(note_obj)
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error updating note: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error updating note")
+        except SQLAlchemyError as e:
+            logger.error("Database error while adding notes: %s", e)
+            NoteErrorHandler.raise_note_update_error(e)
+        except ValueError as e:
+            logger.error("Invalid value error while adding notes: %s", e)
+            NoteErrorHandler.raise_note_update_error(e)
+        except IOError as e:
+            logger.error("I/O error while adding notes: %s", e)
+            NoteErrorHandler.raise_note_update_error(e)
 
     def delete_note(self, note_id, current_user):
         """Delete note"""
@@ -259,10 +304,16 @@ class NoteManager:
             self.db.commit()
             return {"result": f"Note {note_id} has been deleted",
                     "id_note": note_id}
-        except Exception as e:
+        except SQLAlchemyError as e:
             self.db.rollback()
             logger.error(f"Error deleting note: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error deleting note")
+            NoteErrorHandler.raise_delete_note_error(e)
+        except ValueError as e:
+            logger.error("Invalid value error while deleting note: %s", e)
+            NoteErrorHandler.raise_delete_note_error(e)
+        except IOError as e:
+            logger.error("I/O error while deleting note: %s", e)
+            NoteErrorHandler.raise_delete_note_error(e)
 
     def perform_note_action(self, action: str,
                             note=None,
@@ -303,7 +354,12 @@ class NoteManager:
                 "delete_note": lambda: self.delete_note(note_id, current_user)
             }
             return actions[action]()
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error performing note action: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error performing note action")
+        except SQLAlchemyError as e:
+            logger.error("Database error while select action: %s", e)
+            NoteErrorHandler.raise_general_error(e)
+        except ValueError as e:
+            logger.error("Invalid value error while select action: %s", e)
+            NoteErrorHandler.raise_general_error(e)
+        except IOError as e:
+            logger.error("I/O error while select action: %s", e)
+            NoteErrorHandler.raise_general_error(e)

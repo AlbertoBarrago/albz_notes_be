@@ -10,6 +10,7 @@ from app.repositories.auth.login.repository import LoginManager
 from app.repositories.auth.reset.repository import PasswordManager
 from app.repositories.user.repository import UserManager
 from app.schemas.auth.request import TokenRequest, TokenResponse, ResetRequest, ResetUserEmail
+from app.schemas.common.responses import CommonResponses
 from app.schemas.user.request import ResetPswRequest
 
 router = APIRouter()
@@ -17,36 +18,7 @@ router = APIRouter()
 
 @router.post("/auth/login",
              response_model=TokenResponse,
-             responses={
-                 500: {
-                     "description": "User not found",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "status_code": 404,
-                                 "detail": "User not found, Try to register",
-                                 "headers": {
-                                     "WWW-Authenticate": "Bearer"
-                                 }
-                             }
-                         }
-                     }
-                 },
-                 401: {
-                     "description": "Incorrect username or password",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "status_code": 401,
-                                 "detail": "Incorrect username or password",
-                                 "headers": {
-                                     "WWW-Authenticate": "Bearer"
-                                 }
-                             }
-                         }
-                     }
-                 },
-             })
+             responses={**CommonResponses.INTERNAL_SERVER_ERROR, **CommonResponses.UNAUTHORIZED})
 def login(
         request: TokenRequest,
         db: Session = Depends(get_db)
@@ -62,22 +34,7 @@ def login(
 
 @router.post("/auth/swagger",
              response_model=TokenResponse,
-             responses={
-                 401: {
-                     "description": "Incorrect username or password",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "status_code": 401,
-                                 "detail": "Incorrect username or password",
-                                 "headers": {
-                                     "WWW-Authenticate": "Bearer"
-                                 }
-                             }
-                         }
-                     }
-                 },
-             },
+             responses=CommonResponses.UNAUTHORIZED,
              include_in_schema=False)
 def swagger_login(
         grant_type: str = Form(description="OAuth grant type"),
@@ -101,7 +58,8 @@ def swagger_login(
         password=password)
 
 
-@router.post("/auth/refresh-token", response_model=TokenResponse)
+@router.post("/auth/refresh-token", response_model=TokenResponse,
+             responses={**CommonResponses.INTERNAL_SERVER_ERROR, **CommonResponses.UNAUTHORIZED})
 async def refresh_token(current_user: User = Depends(get_current_user),
                         db: Session = Depends(get_db)):
     """
@@ -113,30 +71,7 @@ async def refresh_token(current_user: User = Depends(get_current_user),
 
 
 @router.post("/auth/reset",
-             responses={
-                 500: {
-                     "description": "User not found",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "detail": "User not found",
-                                 "status_code": 404
-                             }
-                         }
-                     }
-                 },
-                 400: {
-                     "description": "Invalid password",
-                     "content": {
-                         "application/json": {
-                             "example": {
-                                 "detail": "Incorrect current password",
-                                 "status_code": 400
-                             }
-                         }
-                     }
-                 }
-             })
+             responses={**CommonResponses.INTERNAL_SERVER_ERROR, **CommonResponses.UNAUTHORIZED})
 async def reset_password(
         psw_req: ResetPswRequest,
         db: Session = Depends(get_db)
@@ -156,7 +91,7 @@ async def reset_password(
 
 @router.post("/auth/send-reset-email",
              response_model=TokenResponse,
-             responses={})
+             responses={**CommonResponses.INTERNAL_SERVER_ERROR, **CommonResponses.UNAUTHORIZED})
 def send_reset_email(
         request: ResetRequest,
         background_tasks: BackgroundTasks,
@@ -173,10 +108,21 @@ def send_reset_email(
     )
 
 
-@router.post("/auth/password-reset/request")
+@router.post("/auth/password-reset")
 async def request_password_reset(
         request: ResetUserEmail,
         background_tasks: BackgroundTasks,
         db: Session = Depends(get_db)
 ):
+    """
+       Initiate a password reset process for a user
+
+       Args:
+           request (ResetUserEmail): Email request object containing user's email
+           background_tasks (BackgroundTasks): FastAPI background tasks handler
+           db (Session): Database session dependency
+
+       Returns:
+           dict: Response containing status of password reset initiation
+       """
     return PasswordManager(db).initiate_password_reset(request.email, background_tasks)

@@ -1,2 +1,10 @@
 [MESSAGES CONTROL]
-disable=R0903,too-many-statements,too-many-return-statements,too-many-locals,too-many-arguments,too-many-positional-arguments
+disable=R0903,  # Too few public methods
+        R0911,  # Too many return statements
+        R0912,  # Too many branches
+        R0913,  # Too many arguments
+        R0914,  # Too many local variables
+        R0915,  # Too many statements
+        R0917,  # Too many statements
+        R0902,  # Too many instance attributes
+        C0103   # Invalid constant name
